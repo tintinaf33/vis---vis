@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vis-à-vis : comparateur de configurations de routeurs voisins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Vis-à-vis : styles */
+:root{
+  --bg:#E8EDF1; --surface:#FFFFFF; --surface-2:#F4F7F9; --ink:#102233; --muted:#566879; --line:#C6D1DA; --line-soft:#DDE4EA;
+  --accent:#1D5C96; --accent-ink:#FFFFFF; --cable:#9DB0C0;
+  --ok:#227A4A; --ok-bg:#E3F2E9; --warn:#9A6200; --warn-bg:#FBF0DA; --err:#B3261E; --err-bg:#FBE4E2; --info:#4E6577; --info-bg:#E6EDF2;
+  --font:"Barlow", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --cond:"Barlow Semi Condensed", "Barlow", "Arial Narrow", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color-scheme: light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1821; --surface:#15222D; --surface-2:#1A2935; --ink:#E2EAF1; --muted:#93A5B4; --line:#2B3C4A; --line-soft:#223240;
+    --accent:#6FA6DA; --accent-ink:#0B1620; --cable:#4A6175;
+    --ok:#5CC28A; --ok-bg:#163326; --warn:#E3AC45; --warn-bg:#352812; --err:#F2766C; --err-bg:#3A1A1A; --info:#9DB2C4; --info-bg:#1F2E3B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1821; --surface:#15222D; --surface-2:#1A2935; --ink:#E2EAF1; --muted:#93A5B4; --line:#2B3C4A; --line-soft:#223240;
+  --accent:#6FA6DA; --accent-ink:#0B1620; --cable:#4A6175;
+  --ok:#5CC28A; --ok-bg:#163326; --warn:#E3AC45; --warn-bg:#352812; --err:#F2766C; --err-bg:#3A1A1A; --info:#9DB2C4; --info-bg:#1F2E3B;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 clamp(16px,3vw,40px)}
+
+/* En-tête */
+.masthead{padding:clamp(28px,5vw,56px) 0 24px;display:grid;grid-template-columns:auto 1fr;gap:20px 28px;align-items:start}
+.mark{width:64px;height:64px;color:var(--accent)}
+.masthead h1{font-family:var(--cond);font-weight:700;font-size:clamp(2.4rem,5vw,3.6rem);line-height:.95;letter-spacing:-.01em;margin:0 0 12px}
+.lede{margin:0;max-width:62ch;color:var(--muted);font-size:1.05rem}
+.privacy{grid-column:2;margin:0;font-size:.9rem;color:var(--muted);display:flex;gap:8px;align-items:center}
+.privacy svg{flex:none;color:var(--ok)}
+
+/* Établi : deux configurations face à face */
+.bench{display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);gap:0;align-items:stretch}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-width:0}
+.pane-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.pane-head h2{font-family:var(--cond);font-weight:600;font-size:1.25rem;margin:0 auto 0 0;display:flex;align-items:center;gap:10px}
+.side-tag{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:.95rem;font-weight:700}
+.pane select{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:.92rem}
+.filebtn{position:relative;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:.92rem;cursor:pointer}
+.filebtn:hover{border-color:var(--accent)}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.pane textarea{flex:1;min-height:360px;resize:vertical;border:0;background:transparent;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:pre;overflow:auto;tab-size:4}
+.pane textarea:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.detect{margin:0;padding:10px 16px;border-top:1px solid var(--line-soft);font-size:.9rem;color:var(--muted);min-height:44px}
+.detect strong{color:var(--ink);font-weight:600}
+.detect.bad{color:var(--err)}
+
+/* Le câble central */
+.patch{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px 10px}
+.patch::before{content:"";position:absolute;left:0;right:0;top:50%;height:3px;background:var(--cable);transform:translateY(-50%);z-index:0}
+.patch>*{position:relative;z-index:1}
+.go{width:112px;height:112px;padding:0 8px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-family:var(--cond);font-weight:700;font-size:1.05rem;cursor:pointer;display:grid;place-items:center;line-height:1.1;box-shadow:0 0 0 6px var(--bg)}
+.go:hover{filter:brightness(1.08)}
+.go:active{transform:scale(.97)}
+.go small{display:block;font-family:var(--font);font-weight:500;font-size:.72rem;opacity:.85;margin-top:2px}
+.ghost{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.85rem;cursor:pointer;color:var(--muted);white-space:nowrap}
+.ghost:hover{color:var(--ink);border-color:var(--accent)}
+
+/* Rapport */
+#report{margin-top:40px;padding-bottom:64px}
+.verdict{display:grid;grid-template-columns:1fr auto;gap:16px 24px;align-items:end;padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.verdict h2{font-family:var(--cond);font-weight:700;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.05;margin:0 0 8px}
+.tally{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0;color:var(--muted);font-size:.95rem}
+.tally span{display:inline-flex;align-items:center;gap:6px}
+.tally b{color:var(--ink);font-weight:600}
+.tools{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 12px;font-size:.9rem;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:.9rem;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;margin-top:28px;align-items:start}
+.index{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));font-size:.92rem}
+.index h3{font-family:var(--cond);font-weight:600;font-size:1rem;color:var(--muted);margin:18px 0 6px}
+.index h3:first-child{margin-top:0}
+.index a{display:flex;gap:8px;align-items:baseline;padding:5px 8px;margin:0 -8px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.3}
+.index a:hover{background:var(--surface)}
+.index a .t{flex:1;min-width:0;overflow-wrap:anywhere;font-family:var(--mono);font-size:.78rem}
+.index a .n{font-size:.78rem;color:var(--muted);white-space:nowrap}
+
+.dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--ok);display:inline-block;transform:translateY(1px)}
+.dot.err{background:var(--err)} .dot.warn{background:var(--warn)} .dot.info{background:var(--info)}
+
+.block{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:22px;overflow:hidden}
+.bhead{padding:18px 20px 14px;border-bottom:1px solid var(--line-soft)}
+.bhead h3{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(48px,120px) minmax(0,1fr);align-items:center;gap:12px;font-family:var(--mono);font-weight:500;font-size:clamp(.9rem,1.6vw,1.05rem)}
+.bhead h3 .ea{text-align:right;overflow-wrap:anywhere}
+.bhead h3 .eb{overflow-wrap:anywhere}
+.bhead h3 .wire{height:3px;background:var(--cable);position:relative;border-radius:2px}
+.bhead h3 .wire::before,.bhead h3 .wire::after{content:"";position:absolute;top:50%;width:9px;height:9px;border-radius:2px;background:var(--ink);transform:translateY(-50%)}
+.bhead h3 .wire::before{left:-2px} .bhead h3 .wire::after{right:-2px}
+.bhead.err .wire{background:var(--err)} .bhead.warn .wire{background:var(--warn)} .bhead.ok .wire{background:var(--ok)}
+.bhead .title{font-family:var(--cond);font-weight:600;font-size:1.35rem;margin:0}
+.bmeta{margin:8px 0 0;text-align:center;color:var(--muted);font-size:.88rem}
+.devnames{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,210px) minmax(0,1fr);gap:12px;padding:10px 20px 0;color:var(--muted);font-size:.82rem}
+.devnames span:first-child{text-align:right}
+.cat{padding:16px 20px 4px;font-family:var(--cond);font-weight:600;font-size:1.02rem;color:var(--accent)}
+
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,210px) minmax(0,1fr);gap:4px 12px;padding:8px 20px;align-items:center}
+.row + .row{border-top:1px dashed var(--line-soft)}
+.va,.vb{font-family:var(--mono);font-size:.8rem;line-height:1.45;overflow-wrap:anywhere;padding:5px 8px;border-radius:6px;background:var(--surface-2)}
+.va{text-align:right}
+.mid{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.mid .lbl{font-size:.84rem;font-weight:600;line-height:1.2}
+.mid .wire{position:relative;width:100%;height:24px}
+.mid .wire::before{content:"";position:absolute;left:-12px;right:-12px;top:50%;height:2px;background:var(--cable);transform:translateY(-50%)}
+.node{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff}
+.node svg{width:14px;height:14px}
+.row.ok .mid .wire::before{background:var(--ok)}
+.row.warn .mid .wire::before{background:linear-gradient(90deg,var(--warn) 0 40%,transparent 40% 60%,var(--warn) 60%) ;}
+.row.err .mid .wire::before{background:linear-gradient(90deg,var(--err) 0 42%,transparent 42% 58%,var(--err) 58%)}
+.row.info .mid .wire::before{background:var(--cable)}
+.row.warn .node{background:var(--warn)} .row.err .node{background:var(--err)} .row.info .node{background:var(--info)}
+.msg{grid-column:1/-1;margin:2px 0 0;font-size:.9rem;padding:6px 10px;border-radius:6px}
+.row.ok .msg{color:var(--muted);padding:0 10px;text-align:center}
+.row.info .msg{background:var(--info-bg)}
+.row.warn .msg{background:var(--warn-bg)}
+.row.err .msg{background:var(--err-bg)}
+.row.ok .msg:empty,.row .msg:empty{display:none}
+.empty{padding:16px 20px;color:var(--muted);font-size:.92rem;margin:0}
+.filtered .row.ok,.filtered .row.info{display:none}
+.filtered-err .row.warn{display:none}
+.filtered .cat.allhidden{display:none}
+
+.manual{padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;gap:12px;align-items:end}
+.manual label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);min-width:0}
+.manual select{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:7px 8px;font-family:var(--mono);font-size:.82rem;color:var(--ink);min-width:0;width:100%}
+.manual .x{padding-bottom:8px;color:var(--muted)}
+.intro{margin:0;padding:14px 20px 0;color:var(--muted);font-size:.92rem;max-width:80ch}
+
+details.raw{border-top:1px solid var(--line-soft)}
+details.raw summary{padding:14px 20px;cursor:pointer;font-weight:600}
+.tablewrap{overflow-x:auto;padding:0 20px 18px}
+table{border-collapse:collapse;width:100%;font-size:.8rem}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+th{font-family:var(--cond);font-weight:600;font-size:.88rem;color:var(--muted)}
+td{font-family:var(--mono)}
+td.off{text-decoration:line-through;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.foot{color:var(--muted);font-size:.85rem;padding:24px 0 40px;border-top:1px solid var(--line);margin-top:24px}
+.foot p{margin:0 0 6px;max-width:90ch}
+
+@media (max-width: 980px){
+  .bench{grid-template-columns:minmax(0,1fr)}
+  .patch{flex-direction:row;flex-wrap:wrap;padding:18px 0}
+  .patch::before{left:50%;right:auto;top:0;bottom:0;width:3px;height:auto;transform:translateX(-50%)}
+  .go{width:auto;height:auto;border-radius:999px;padding:12px 24px}
+  .go small{display:inline;margin-left:6px}
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .index{position:static;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .verdict{grid-template-columns:minmax(0,1fr)}
+  .tools{justify-content:flex-start}
+}
+@media (max-width: 640px){
+  .masthead{grid-template-columns:minmax(0,1fr)}
+  .mark{width:48px;height:48px}
+  .privacy{grid-column:1}
+  .row,.devnames{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding-left:14px;padding-right:14px}
+  .devnames span:nth-child(2){display:none}
+  .devnames span:first-child{text-align:left}
+  .row .mid{grid-column:1/-1;order:-1;flex-direction:row;justify-content:flex-start;gap:10px;text-align:left}
+  .row .mid .wire{width:24px;height:24px;flex:none}
+  .row .mid .wire::before{display:none}
+  .va{text-align:left}
+  .bhead h3{grid-template-columns:minmax(0,1fr);gap:6px}
+  .bhead h3 .ea{text-align:left}
+  .bhead h3 .wire{width:60px}
+  .bmeta{text-align:left}
+  .manual{grid-template-columns:minmax(0,1fr)}
+  .manual .x{display:none}
+  .cat{padding-left:14px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+@media print{ .patch,.tools,.index,.bench,.manual-block{display:none!important} .block{break-inside:avoid} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="3" y="20" width="18" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+      <rect x="43" y="20" width="18" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+      <path d="M21 32h22" stroke="currentColor" stroke-width="3"/>
+      <circle cx="32" cy="32" r="5" fill="currentColor"/>
+      <path d="M8 27h8M8 32h8M8 37h8M48 27h8M48 32h8M48 37h8" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <div>
+      <h1>Vis-à-vis</h1>
+      <p class="lede">Collez la configuration de deux équipements voisins. L’outil retrouve les liens qui les relient, puis vérifie paramètre par paramètre que chaque côté attend exactement ce que l’autre envoie : adressage, MTU, VLAN, agrégats LACP, OSPF, IS-IS, LDP et sessions BGP.</p>
+    </div>
+    <p class="privacy"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m5.3 8 1.9 1.9 3.6-3.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Analyse faite dans votre navigateur : aucune configuration n’est envoyée nulle part.</p>
+  </header>
+
+  <section class="bench" aria-label="Configurations à comparer">
+    <article class="pane" id="paneA">
+      <div class="pane-head">
+        <h2><span class="side-tag">A</span>Premier équipement</h2>
+        <select id="venA" aria-label="Constructeur du côté A"><option value="auto">Détection automatique</option></select>
+        <label class="filebtn">Ouvrir un fichier<input type="file" id="fileA" accept=".txt,.conf,.cfg,.log,text/plain"></label>
+      </div>
+      <textarea id="cfgA" spellcheck="false" autocomplete="off" aria-label="Configuration du côté A"></textarea>
+      <p class="detect" id="detA">Collez une configuration ou ouvrez un fichier.</p>
+    </article>
+
+    <div class="patch">
+      <button class="go" id="run" title="Ctrl + Entrée">Comparer<small>Ctrl + Entrée</small></button>
+      <button class="ghost" id="swap" type="button">Inverser A et B</button>
+      <button class="ghost" id="demo" type="button">Charger l’exemple</button>
+      <button class="ghost" id="clear" type="button">Tout effacer</button>
+    </div>
+
+    <article class="pane" id="paneB">
+      <div class="pane-head">
+        <h2><span class="side-tag">B</span>Équipement voisin</h2>
+        <select id="venB" aria-label="Constructeur du côté B"><option value="auto">Détection automatique</option></select>
+        <label class="filebtn">Ouvrir un fichier<input type="file" id="fileB" accept=".txt,.conf,.cfg,.log,text/plain"></label>
+      </div>
+      <textarea id="cfgB" spellcheck="false" autocomplete="off" aria-label="Configuration du côté B"></textarea>
+      <p class="detect" id="detB">Collez une configuration ou ouvrez un fichier.</p>
+    </article>
+  </section>
+
+  <section id="report" hidden aria-live="polite"></section>
+
+  <footer class="foot">
+    <p>Formats acceptés : Junos en hiérarchique ou en <code>display set</code> (lignes désactivées ignorées, routing-instances prises en compte) et Comware 7 (<code>display current-configuration</code>, noms d’interfaces complets ou abrégés).</p>
+    <p>Code source, ajout de constructeurs et hébergement : voir le README du dépôt.</p>
+    <p>Les clés Junos <code>$9$</code> sont décodées localement uniquement pour être comparées et ne sont jamais affichées. Les clés HPE <code>$c$</code> ne sont pas réversibles et restent à vérifier à la main.</p>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* Vis-à-vis : Adresses IPv4 / IPv6 */
+(function (V) {
+  'use strict';
+
+  /* ---------- IP ---------- */
+  function v4int(s) {
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(s || '')) return null;
+    const p = s.split('.').map(Number);
+    if (p.some(x => x > 255)) return null;
+    return ((p[0] * 16777216) + (p[1] << 16) + (p[2] << 8) + p[3]) >>> 0;
+  }
+  function v4str(n) { return [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.'); }
+  function maskLen(m) {
+    const n = v4int(m); if (n === null) return null;
+    let l = 0; while (l < 32 && (n & (0x80000000 >>> l))) l++;
+    return l;
+  }
+  function lenMask(l) { return l <= 0 ? 0 : (l >= 32 ? 0xFFFFFFFF : ((0xFFFFFFFF << (32 - l)) >>> 0)); }
+  function net4(n, l) { return (n & lenMask(l)) >>> 0; }
+  function v6big(s) {
+    s = String(s || '').toLowerCase().split('%')[0];
+    if (!/^[0-9a-f:]+$/.test(s) || s.indexOf(':') < 0) return null;
+    const halves = s.split('::'); if (halves.length > 2) return null;
+    const hp = halves[0] ? halves[0].split(':') : [];
+    const tp = halves.length === 2 && halves[1] ? halves[1].split(':') : [];
+    let parts;
+    if (halves.length === 1) { parts = hp; if (parts.length !== 8) return null; }
+    else { const fill = 8 - hp.length - tp.length; if (fill < 0) return null; parts = [...hp, ...Array(fill).fill('0'), ...tp]; }
+    let b = 0n;
+    for (const p of parts) { if (!/^[0-9a-f]{1,4}$/.test(p)) return null; b = (b << 16n) + BigInt(parseInt(p, 16)); }
+    return b;
+  }
+  function net6(b, l) { const all = (1n << 128n) - 1n; const mask = l <= 0 ? 0n : (all ^ ((1n << BigInt(128 - l)) - 1n)); return b & mask; }
+  function sameNet(x, y, l) { return x.fam === 4 ? net4(x.n, l) === net4(y.n, l) : net6(x.n, l) === net6(y.n, l); }
+  function addAddr(i, cidr, extra) {
+    if (!cidr) return;
+    const [ip, l] = cidr.split('/');
+    if (ip.includes(':')) { const b = v6big(ip); if (b !== null) i.v6.push(Object.assign({ fam: 6, ip, len: l ? +l : 128, n: b }, extra || {})); }
+    else { const n = v4int(ip); if (n !== null) i.v4.push(Object.assign({ fam: 4, ip, len: l ? +l : 32, n }, extra || {})); }
+  }
+  const cidr = a => a.ip + '/' + a.len;
+
+  Object.assign(V, { v4int, v4str, maskLen, lenMask, net4, v6big, net6, sameNet, addAddr, cidr });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Outils texte (découpage, VLAN, vitesses) */
+(function (V) {
+  'use strict';
+  const { v4str } = V;
+
+  /* ---------- Outils texte ---------- */
+  function tok(line) {
+    const out = []; const re = /"((?:[^"\\]|\\.)*)"|(\S+)/g; let m;
+    while ((m = re.exec(line))) out.push(m[1] !== undefined ? m[1] : m[2]);
+    return out;
+  }
+  function expandVlans(tokens) {
+    const out = [];
+    for (let k = 0; k < tokens.length; k++) {
+      const x = String(tokens[k]);
+      if (tokens[k + 1] === 'to' && /^\d+$/.test(x)) {
+        const a = +x, b = +tokens[k + 2];
+        for (let v = a; v <= b && v - a < 4095; v++) out.push(v); k += 2;
+      } else if (/^\d+-\d+$/.test(x)) {
+        const [a, b] = x.split('-').map(Number); for (let v = a; v <= b && v - a < 4095; v++) out.push(v);
+      } else if (/^\d+$/.test(x)) out.push(+x);
+    }
+    return out;
+  }
+  function fmtVlans(set) {
+    if (set === 'all') return 'toutes';
+    const a = [...set].map(Number).sort((x, y) => x - y); if (!a.length) return 'aucun';
+    const r = []; let s = a[0], p = a[0];
+    for (let i = 1; i <= a.length; i++) {
+      if (a[i] === p + 1) { p = a[i]; continue; }
+      r.push(s === p ? String(s) : s + '-' + p); s = p = a[i];
+    }
+    return r.join(', ');
+  }
+  function normSpeed(s) {
+    if (!s) return null; s = String(s).toLowerCase();
+    if (s === 'auto') return 'auto';
+    const m = /^(\d+(?:\.\d+)?)([mg]?)$/.exec(s); if (!m) return s;
+    return m[2] === 'g' ? Math.round(+m[1] * 1000) : +m[1];
+  }
+  const fmtSpeed = v => v == null ? 'auto (défaut)' : (v === 'auto' ? 'auto' : (v >= 1000 ? v / 1000 + ' Gb/s' : v + ' Mb/s'));
+  function normArea(a) { if (a == null) return null; return /^\d+$/.test(a) ? v4str(+a >>> 0) : a; }
+  const natSort = (a, b) => a.localeCompare(b, 'fr', { numeric: true });
+  const mapNet = x => ({ p2p: 'p2p', 'point-to-point': 'p2p', broadcast: 'broadcast', nbma: 'nbma', p2mp: 'p2mp' }[x] || x);
+
+  Object.assign(V, { tok, expandVlans, fmtVlans, normSpeed, fmtSpeed, normArea, natSort, mapNet });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Clés et mots de passe (décodage $9$ local, jamais affiché) */
+(function (V) {
+  'use strict';
+
+  /* ---------- Secrets Junos $9$ (décodage local, jamais affiché) ---------- */
+  const J9 = (function () {
+    const FAM = ['QzF3n6/9CAtpu0O', 'B1IREhcSyrleKvMW8LXx', '7N-dVbwsY2g4oaJZGUDj', 'iHkq.mPf5T'];
+    const EXTRA = {}; FAM.forEach((f, i) => { for (const c of f) EXTRA[c] = 3 - i; });
+    const NA = FAM.join('').split(''); const AN = {}; NA.forEach((c, i) => { AN[c] = i; });
+    const ENC = [[1, 4, 32], [1, 16, 32], [1, 8, 32], [1, 64], [1, 32], [1, 4, 16, 128], [1, 32, 64]];
+    const mod = (a, n) => ((a % n) + n) % n;
+    function dec(s) {
+      const m = /^\$9\$(\S+)$/.exec(s || ''); if (!m) return null;
+      let ch = m[1]; const take = n => { const r = ch.slice(0, n); ch = ch.slice(n); return r; };
+      const first = take(1); if (EXTRA[first] === undefined) return null;
+      take(EXTRA[first]);
+      let prev = first, out = '';
+      while (ch.length) {
+        const d = ENC[out.length % ENC.length]; const nib = take(d.length);
+        if (nib.length < d.length) return null;
+        let num = 0;
+        for (let i = 0; i < nib.length; i++) {
+          const c = nib[i]; if (AN[c] === undefined) return null;
+          num += (mod(AN[c] - AN[prev], NA.length) - 1) * d[i]; prev = c;
+        }
+        out += String.fromCharCode(mod(num, 256));
+      }
+      return out;
+    }
+    function enc(plain, seed) {
+      let r = seed || 7; const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
+      const salt = NA[Math.floor(rnd() * NA.length)];
+      let crypt = '$9$' + salt; for (let i = 0; i < EXTRA[salt]; i++) crypt += NA[Math.floor(rnd() * NA.length)];
+      let prev = salt;
+      for (let p = 0; p < plain.length; p++) {
+        const e = ENC[p % ENC.length]; let ord = plain.charCodeAt(p); const gaps = [];
+        for (let i = e.length - 1; i >= 0; i--) { gaps.unshift(Math.floor(ord / e[i])); ord = ord % e[i]; }
+        for (let g of gaps) { g += AN[prev] + 1; const c = NA[mod(g, NA.length)]; crypt += c; prev = c; }
+      }
+      return crypt;
+    }
+    return { dec, enc };
+  })();
+
+  function secret(raw) {
+    if (raw == null || raw === '') return null;
+    if (/^\$9\$/.test(raw)) return { kind: 'junos9', raw, value: J9.dec(raw) };
+    if (/^\$[1256]\$/.test(raw)) return { kind: 'hash', raw, value: null };
+    return { kind: 'plain', raw, value: raw };
+  }
+  function cwSecret(mode, val) {
+    if (val == null) return null;
+    if (mode === 'plain' || mode === 'simple') return { kind: 'plain', raw: val, value: val };
+    return { kind: 'cipher', raw: val, value: null };
+  }
+  function fmtSecret(s) {
+    if (!s) return 'aucune';
+    return { junos9: 'clé $9$ (masquée)', cipher: 'clé chiffrée $c$', plain: 'clé en clair (masquée)', hash: 'clé hachée' }[s.kind] || 'clé';
+  }
+  function cmpSecret(a, b) {
+    if (!a && !b) return { sev: 'ok', msg: 'Aucune clé des deux côtés.' };
+    if (!a || !b) return { sev: 'err', msg: 'Une clé est configurée d’un seul côté : l’authentification échouera.' };
+    if (a.value != null && b.value != null) return a.value === b.value
+      ? { sev: 'ok', msg: 'Clés identiques (comparées après décodage local, jamais affichées).' }
+      : { sev: 'err', msg: 'Les clés sont différentes.' };
+    if (a.raw === b.raw) return { sev: 'ok', msg: 'Chaînes chiffrées identiques.' };
+    return { sev: 'info', msg: 'Une clé est chiffrée de façon non réversible (HPE $c$) : comparez-la à la main.' };
+  }
+
+  Object.assign(V, { J9, secret, cwSecret, fmtSecret, cmpSecret });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Modèle commun, registre des constructeurs, accès partagés */
+(function (V) {
+  'use strict';
+  const { expandVlans } = V;
+
+  /* ---------- Modèle commun ---------- */
+  function newDev(vendor) {
+    return {
+      vendor, hostname: '', ifs: new Map(), vlans: new Map(), notes: [], vrfs: new Set(),
+      routerId: null, lsrId: null, ldpGlobal: false,
+      ospf: { rid: null, areas: {}, ifs: new Map(), procs: [] },
+      ospf3: { rid: null, areas: {}, ifs: new Map(), procs: [] },
+      isis: { enabled: false, nets: [], globalLevels: new Set([1, 2]), ifs: new Map(), procs: {} },
+      ldp: new Set(), mpls: new Set(), rsvp: new Set(),
+      bgp: { as: null, rid: null, neighbors: [] },
+      lldp: { enabled: null, all: false, ifs: new Set() }
+    };
+  }
+  function getIf(dev, name) {
+    let i = dev.ifs.get(name);
+    if (!i) {
+      i = { name, desc: '', v4: [], v6: [], disabled: false, mtu: null, ipMtu: null, vlanId: null, tagging: null,
+        native: null, lag: null, lacp: null, lacpPeriod: null, minLinks: null, speed: null, duplex: null,
+        l2: null, iso: false, isoAddr: [], mpls: false, vrf: null, parent: null, unit: null, kind: null };
+      dev.ifs.set(name, i);
+    }
+    return i;
+  }
+
+  /* ---------- Registre des constructeurs ----------
+   * Chaque constructeur s'enregistre avec registerVendor() : voir docs/ajouter-un-constructeur.md */
+  const vendors = [];
+  function registerVendor(def) {
+    const k = vendors.findIndex(v => v.id === def.id);
+    if (k >= 0) vendors[k] = def; else vendors.push(def);
+  }
+  const adapter = dev => vendors.find(v => v.id === (typeof dev === 'string' ? dev : dev.vendor)) || null;
+  function detectVendor(text) {
+    if (!text || !text.trim()) return null;
+    let best = null, score = 0;
+    for (const v of vendors) { const s = v.detect(text) || 0; if (s > score) { score = s; best = v.id; } }
+    return best;
+  }
+  function parse(text, vendor) {
+    const id = vendor && vendor !== 'auto' ? vendor : detectVendor(text);
+    const ad = id ? adapter(id) : null;
+    if (!ad) return null;
+    const dev = ad.parse(text);
+    dev.detected = !vendor || vendor === 'auto';
+    return dev;
+  }
+
+  /* ---------- Accès communs ---------- */
+  const allAddr = i => [...i.v4, ...i.v6];
+  const l3Ifs = dev => [...dev.ifs.values()].filter(i => allAddr(i).length);
+  const phys = (dev, i) => (i.parent ? dev.ifs.get(i.parent) : i) || i;
+  const name = d => d.hostname || (adapter(d) ? adapter(d).short : '?');
+  const R = (cat, label, sev, a, b, msg) => ({ cat, label, sev, a: a == null ? '—' : String(a), b: b == null ? '—' : String(b), msg: msg || '' });
+  function resolveVlans(dev, list) {
+    const out = [];
+    for (const x of list || []) {
+      if (/^\d+(-\d+)?$/.test(String(x))) out.push(...expandVlans([x]));
+      else if (dev.vlans.has(x)) out.push(dev.vlans.get(x));
+    }
+    return out;
+  }
+
+  Object.assign(V, { newDev, getIf, vendors, registerVendor, adapter, detectVendor, parse, allAddr, l3Ifs, phys, name, R, resolveVlans });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Constructeur : Juniper Junos (lecture hiérarchique et display set) */
+(function (V) {
+  'use strict';
+  const { addAddr, allAddr, getIf, mapNet, name, newDev, normArea, normSpeed, parse, phys, registerVendor, resolveVlans, secret, tok } = V;
+
+  /* ---------- Junos ---------- */
+  function junosToSet(text) {
+    let s = text.replace(/\/\*[\s\S]*?\*\//g, '');
+    s = s.split(/\r?\n/).filter(l => !/^\s*\{(master|backup|primary|secondary|linecard)[^}]*\}\s*$/i.test(l) && !/^\s*[\w.-]+@[\w.-]+[>#%]/.test(l)).join('\n');
+    const toks = []; let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === '#') { while (i < s.length && s[i] !== '\n') i++; continue; }
+      if (/\s/.test(c)) { i++; continue; }
+      if ('{};[]'.includes(c)) { toks.push({ t: c }); i++; continue; }
+      if (c === '"') {
+        let j = i + 1, v = '';
+        while (j < s.length && s[j] !== '"') { if (s[j] === '\\' && j + 1 < s.length) { v += s[j + 1]; j += 2; continue; } v += s[j]; j++; }
+        toks.push({ w: v, q: true }); i = j + 1; continue;
+      }
+      let j = i; while (j < s.length && !/[\s{};[\]"]/.test(s[j])) j++;
+      toks.push({ w: s.slice(i, j) }); i = j;
+    }
+    const out = [], stack = []; let cur = [], list = null;
+    const fmt = w => (w.q || /\s/.test(w.w) || w.w === '') ? '"' + w.w + '"' : w.w;
+    const stripPrefixes = () => {
+      let inact = false;
+      while (cur.length && cur[0].w && /^(inactive|protect|replace|delete):$/.test(cur[0].w)) { if (cur[0].w === 'inactive:') inact = true; cur.shift(); }
+      return inact;
+    };
+    for (const k of toks) {
+      if (k.t === '[') { list = []; continue; }
+      if (k.t === ']') { cur.push({ list: list || [] }); list = null; continue; }
+      if (list && k.w !== undefined) { list.push(k); continue; }
+      if (k.t === '{') { const inact = stripPrefixes(); stack.push({ words: cur.map(fmt).join(' '), inactive: inact }); cur = []; continue; }
+      if (k.t === '}') { stack.pop(); cur = []; continue; }
+      if (k.t === ';') {
+        const inact = stripPrefixes();
+        if (cur.length) {
+          const anyInactive = inact || stack.some(x => x.inactive);
+          const prefix = stack.map(x => x.words).filter(Boolean).join(' ');
+          const li = cur.findIndex(x => x.list);
+          const variants = li >= 0 ? cur[li].list.map(v => [...cur.slice(0, li), v, ...cur.slice(li + 1)]) : [cur];
+          for (const v of variants) {
+            const line = ('set ' + prefix + ' ' + v.map(fmt).join(' ')).replace(/\s+/g, ' ').trim();
+            out.push(anyInactive ? '#inactive ' + line : line);
+          }
+        }
+        cur = []; continue;
+      }
+      cur.push(k);
+    }
+    return out;
+  }
+  function junosLines(text) {
+    const raw = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const setCount = raw.filter(l => /^(set|deactivate) /.test(l)).length;
+    const isSet = setCount > 0 && setCount >= raw.filter(l => !l.startsWith('#')).length * 0.5;
+    const lines = isSet ? raw.filter(l => /^(set|deactivate) /.test(l)) : junosToSet(text);
+    const deact = lines.filter(l => l.startsWith('deactivate ')).map(l => 'set ' + l.slice(11));
+    const res = [], inactive = [];
+    for (const l of lines) {
+      if (l.startsWith('deactivate ')) continue;
+      if (l.startsWith('#inactive ')) { inactive.push(l.slice(10)); continue; }
+      if (deact.some(d => l === d || l.startsWith(d + ' '))) { inactive.push(l); continue; }
+      res.push(l);
+    }
+    return { lines: res, inactive, format: isSet ? 'set' : 'hiérarchique' };
+  }
+  const normJIf = n => (!n || n === 'all' || n.includes('.')) ? n : n + '.0';
+  function normJFam(f, s) {
+    const m = { 'inet-vpn': 'vpnv4', 'inet6-vpn': 'vpnv6', evpn: 'evpn', l2vpn: 'l2vpn', 'route-target': 'rtc', 'inet-mvpn': 'mvpn', 'inet6-mvpn': 'mvpn6' };
+    if (m[f]) return m[f];
+    if (f === 'inet') return s === 'labeled-unicast' ? 'ipv4-labeled' : s === 'flow' ? 'flowspec' : s === 'multicast' ? 'ipv4-multicast' : 'ipv4-unicast';
+    if (f === 'inet6') return s === 'labeled-unicast' ? 'ipv6-labeled' : s === 'flow' ? 'flowspec-v6' : 'ipv6-unicast';
+    return f + (s ? ' ' + s : '');
+  }
+
+  function parseJunos(text) {
+    const dev = newDev('junos');
+    const { lines, inactive, format } = junosLines(text);
+    dev.format = format;
+    if (inactive.length) dev.notes.push({ sev: 'info', msg: `${inactive.length} ligne(s) désactivée(s) (inactive / deactivate) ignorée(s).` });
+    const groups = new Set(), bgpGroups = {}, bgpGlob = {};
+    let applyGroups = false;
+    for (const line of lines) {
+      let t = tok(line); if (t[0] !== 'set') continue; t = t.slice(1);
+      if (t[0] === 'groups') { groups.add(t[1]); continue; }
+      if (t.includes('apply-groups')) applyGroups = true;
+      if (t[0] === 'logical-systems') t = t.slice(2);
+      let vrf = null;
+      if (t[0] === 'routing-instances') {
+        vrf = t[1]; dev.vrfs.add(vrf); t = t.slice(2);
+        if (t[0] === 'interface') { getIf(dev, normJIf(t[1])).vrf = vrf; continue; }
+      }
+      jStatement(dev, t, vrf, bgpGroups, bgpGlob);
+    }
+    if (groups.size || applyGroups) dev.notes.push({ sev: 'info', msg: `Groupes de configuration (${[...groups].join(', ') || 'apply-groups'}) non dépliés : collez plutôt la sortie de « show configuration | display inheritance | display set ».` });
+    // BGP : héritage global > groupe > voisin
+    for (const g of Object.values(bgpGroups)) {
+      const G = bgpGlob[g.vrf || ''] || {};
+      for (const n of Object.values(g.neighbors)) {
+        const pick = k => n[k] !== undefined ? n[k] : (g[k] !== undefined ? g[k] : G[k]);
+        const type = pick('type') || null;
+        let peerAs = pick('peerAs');
+        if (!peerAs && type === 'internal') peerAs = dev.bgp.as;
+        dev.bgp.neighbors.push({
+          ip: n.ip, group: g.name, vrf: g.vrf, type, peerAs, localAs: pick('localAs'), localAddress: pick('localAddress'),
+          auth: pick('auth') || null, multihop: !!pick('multihop'), ttl: pick('ttl'), families: pick('families') || null,
+          hold: pick('hold'), bfd: pick('bfd') || null, desc: n.desc || '', shutdown: !!pick('shutdown'), passive: !!pick('passive')
+        });
+      }
+    }
+    // Agrégats
+    for (const i of dev.ifs.values()) if (i.lag) { const p = getIf(dev, i.lag); p.kind = 'lag'; }
+    for (const i of dev.ifs.values()) {
+      if (/^ae\d+$/.test(i.name)) {
+        i.kind = 'lag';
+        i.lacpMode = i.lacp || 'static';
+        if (!i.lacpPeriod) i.lacpPeriod = i.lacp ? 'fast' : null;
+      }
+      if (!i.kind) i.kind = /^lo\d/.test(i.name) ? 'loopback' : 'phys';
+      if (i.kind === 'unit' && /^lo\d/.test(i.parent)) i.loopback = true;
+    }
+    // NET IS-IS
+    for (const i of dev.ifs.values()) for (const a of i.isoAddr) dev.isis.nets.push(a);
+    if (dev.lldp.enabled === null) dev.lldp.enabled = false;
+    return dev;
+  }
+
+  function jStatement(dev, t, vrf, bgpGroups, bgpGlob) {
+    const k = t[0];
+    if (k === 'system' && t[1] === 'host-name') { dev.hostname = t[2]; return; }
+    if (k === 'routing-options') {
+      if (vrf) return;
+      if (t[1] === 'router-id') dev.routerId = t[2];
+      if (t[1] === 'autonomous-system') dev.bgp.as = t[2];
+      return;
+    }
+    if (k === 'vlans' || k === 'bridge-domains') { if (t[2] === 'vlan-id') dev.vlans.set(t[1], +t[3]); return; }
+    if (k === 'interfaces') return jInterface(dev, t);
+    if (k !== 'protocols') return;
+    const p = t[1], r = t.slice(2);
+    if (p === 'ospf' || p === 'ospf3') {
+      const O = p === 'ospf' ? dev.ospf : dev.ospf3;
+      if (r[0] !== 'area') return;
+      const area = normArea(r[1]);
+      const ar = O.areas[area] = O.areas[area] || { type: 'normal' };
+      const rr = r.slice(2);
+      if (rr[0] === 'stub') ar.type = rr.includes('no-summaries') ? 'stub (totally)' : 'stub';
+      else if (rr[0] === 'nssa') ar.type = 'nssa';
+      else if (rr[0] === 'authentication-type') ar.auth = { type: rr[1] };
+      else if (rr[0] === 'interface') {
+        const ifn = normJIf(rr[1]);
+        let oi = O.ifs.get(ifn);
+        if (!oi) { oi = { area, vrf, network: null, hello: null, dead: null, auth: null, passive: false, cost: null, bfd: null, disabled: false }; O.ifs.set(ifn, oi); }
+        const x = rr.slice(2);
+        switch (x[0]) {
+          case 'interface-type': oi.network = mapNet(x[1]); break;
+          case 'hello-interval': oi.hello = +x[1]; break;
+          case 'dead-interval': oi.dead = +x[1]; break;
+          case 'passive': oi.passive = true; break;
+          case 'metric': oi.cost = +x[1]; break;
+          case 'disable': oi.disabled = true; break;
+          case 'authentication':
+            if (x[1] === 'md5') oi.auth = { type: 'md5', keyId: x[2], secret: secret(x[4]) };
+            else if (x[1] === 'simple-password') oi.auth = { type: 'simple', secret: secret(x[2]) };
+            else if (x[1] === 'keychain') oi.auth = { type: 'keychain', name: x[2] };
+            break;
+          case 'bfd-liveness-detection':
+            oi.bfd = oi.bfd || {};
+            if (x[1] === 'minimum-interval') oi.bfd.min = +x[2];
+            if (x[1] === 'multiplier') oi.bfd.mult = +x[2];
+            break;
+        }
+      }
+      return;
+    }
+    if (p === 'isis') {
+      dev.isis.enabled = true;
+      if (r[0] === 'level' && r[2] === 'disable') dev.isis.globalLevels.delete(+r[1]);
+      if (r[0] === 'interface') {
+        const ifn = normJIf(r[1]);
+        if (!dev.isis.ifs.has(ifn)) dev.isis.ifs.set(ifn, { levels: new Set([1, 2]), p2p: false, auth: null, passive: false, bfd: null, disabled: false });
+        const ii = dev.isis.ifs.get(ifn); const x = r.slice(2);
+        if (x[0] === 'point-to-point') ii.p2p = true;
+        else if (x[0] === 'passive') ii.passive = true;
+        else if (x[0] === 'disable') ii.disabled = true;
+        else if (x[0] === 'level') {
+          if (x[2] === 'disable') ii.levels.delete(+x[1]);
+          else if (x[2] === 'passive') ii.passive = true;
+          else if (x[2] === 'hello-authentication-key') { ii.auth = ii.auth || { type: 'md5' }; ii.auth.secret = secret(x[3]); }
+          else if (x[2] === 'hello-authentication-type') { ii.auth = ii.auth || {}; ii.auth.type = x[3]; }
+        } else if (x[0] === 'hello-authentication-key') { ii.auth = ii.auth || { type: 'md5' }; ii.auth.secret = secret(x[1]); }
+        else if (x[0] === 'bfd-liveness-detection') {
+          ii.bfd = ii.bfd || {}; if (x[1] === 'minimum-interval') ii.bfd.min = +x[2]; if (x[1] === 'multiplier') ii.bfd.mult = +x[2];
+        }
+      }
+      return;
+    }
+    if (p === 'ldp' && r[0] === 'interface') { dev.ldp.add(normJIf(r[1])); return; }
+    if (p === 'mpls' && r[0] === 'interface') { dev.mpls.add(normJIf(r[1])); return; }
+    if (p === 'rsvp' && r[0] === 'interface') { dev.rsvp.add(normJIf(r[1])); return; }
+    if (p === 'lldp') {
+      if (r[0] === 'disable') dev.lldp.enabled = false;
+      else {
+        if (dev.lldp.enabled !== false) dev.lldp.enabled = true;
+        if (r[0] === 'interface') { if (r[1] === 'all') dev.lldp.all = r[2] !== 'disable'; else if (r[2] !== 'disable') dev.lldp.ifs.add(r[1]); }
+      }
+      return;
+    }
+    if (p === 'bgp') {
+      const gk = vrf || '';
+      const G = bgpGlob[gk] = bgpGlob[gk] || {};
+      if (r[0] === 'group') {
+        const key = gk + '|' + r[1];
+        const g = bgpGroups[key] = bgpGroups[key] || { name: r[1], vrf, neighbors: {} };
+        const x = r.slice(2);
+        if (x[0] === 'neighbor') { const n = g.neighbors[x[1]] = g.neighbors[x[1]] || { ip: x[1] }; jBgpAttr(n, x.slice(2)); }
+        else jBgpAttr(g, x);
+      } else jBgpAttr(G, r);
+    }
+  }
+  function jBgpAttr(o, x) {
+    switch (x[0]) {
+      case 'type': o.type = x[1]; break;
+      case 'peer-as': o.peerAs = x[1]; break;
+      case 'local-as': o.localAs = x[1]; break;
+      case 'local-address': o.localAddress = x[1]; break;
+      case 'authentication-key': o.auth = secret(x[1]); break;
+      case 'multihop': o.multihop = true; if (x[1] === 'ttl') o.ttl = +x[2]; break;
+      case 'family': { if (!o.families) o.families = new Set(); o.families.add(normJFam(x[1], x[2])); break; }
+      case 'hold-time': o.hold = +x[1]; break;
+      case 'bfd-liveness-detection':
+        o.bfd = o.bfd || {}; if (x[1] === 'minimum-interval') o.bfd.min = +x[2]; if (x[1] === 'multiplier') o.bfd.mult = +x[2]; break;
+      case 'description': o.desc = x.slice(1).join(' '); break;
+      case 'shutdown': o.shutdown = true; break;
+      case 'passive': o.passive = true; break;
+    }
+  }
+  function jInterface(dev, t) {
+    const pn = t[1]; if (!pn || pn === 'interface-range' || pn === 'traceoptions') return;
+    const p = getIf(dev, pn); let r = t.slice(2);
+    if (r[0] === 'unit') {
+      const u = getIf(dev, pn + '.' + r[1]); u.parent = pn; u.unit = r[1]; u.kind = 'unit';
+      r = r.slice(2);
+      switch (r[0]) {
+        case 'description': u.desc = r.slice(1).join(' '); break;
+        case 'vlan-id': u.vlanId = +r[1]; break;
+        case 'disable': u.disabled = true; break;
+        case 'family': {
+          const f = r[1], rr = r.slice(2);
+          if (f === 'inet') { u.inet = true; if (rr[0] === 'address') addAddr(u, rr[1]); else if (rr[0] === 'mtu') u.ipMtu = +rr[1]; }
+          else if (f === 'inet6') { u.inet6 = true; if (rr[0] === 'address') addAddr(u, rr[1]); }
+          else if (f === 'iso') { u.iso = true; if (rr[0] === 'address') u.isoAddr.push(rr[1]); }
+          else if (f === 'mpls') u.mpls = true;
+          else if (f === 'bridge' || f === 'ethernet-switching') {
+            u.l2 = u.l2 || { mode: null, vlans: [], native: null };
+            if (rr[0] === 'interface-mode' || rr[0] === 'port-mode') u.l2.mode = rr[1];
+            else if (rr[0] === 'vlan-id-list' || rr[0] === 'vlan-id') u.l2.vlans.push(rr[1]);
+            else if (rr[0] === 'vlan' && rr[1] === 'members') u.l2.vlans.push(rr[2]);
+            else if (rr[0] === 'native-vlan-id') u.l2.native = rr[1];
+          }
+          break;
+        }
+      }
+      return;
+    }
+    switch (r[0]) {
+      case 'description': p.desc = r.slice(1).join(' '); break;
+      case 'mtu': p.mtu = +r[1]; break;
+      case 'disable': p.disabled = true; break;
+      case 'vlan-tagging': case 'flexible-vlan-tagging': p.tagging = 'single'; break;
+      case 'stacked-vlan-tagging': p.tagging = 'stacked'; break;
+      case 'native-vlan-id': p.native = +r[1]; break;
+      case 'speed': p.speed = normSpeed(r[1]); break;
+      case 'link-mode': p.duplex = String(r[1]).replace('-duplex', ''); break;
+      case 'gigether-options': case 'ether-options':
+        if (r[1] === '802.3ad') p.lag = r[2] === 'bundle' ? r[3] : r[2];
+        else if (r[1] === 'no-auto-negotiation') p.autoneg = false;
+        else if (r[1] === 'speed') p.speed = normSpeed(r[2]);
+        else if (r[1] === 'link-mode') p.duplex = String(r[2]).replace('-duplex', '');
+        break;
+      case 'aggregated-ether-options':
+        if (r[1] === 'lacp') { if (r[2] === 'active' || r[2] === 'passive') p.lacp = r[2]; else if (r[2] === 'periodic') p.lacpPeriod = r[3]; }
+        else if (r[1] === 'minimum-links') p.minLinks = +r[2];
+        else if (r[1] === 'link-speed') p.speed = normSpeed(r[2]);
+        break;
+    }
+  }
+
+  /* ---------- Adaptateur Junos ---------- */
+  function detectJunos(text) {
+    const setL = (text.match(/^\s*set\s+(interfaces|system|protocols|routing-options|policy-options|chassis|firewall|vlans|routing-instances|snmp)\b/gm) || []).length;
+    if (setL >= 1) return 0.9;
+    if (/^\s*(interfaces|system|protocols|routing-options)\s*\{/m.test(text) || /^\s*version\s+[\w.-]+;/m.test(text)) return 0.9;
+    return 0;
+  }
+  registerVendor({
+    id: 'junos', label: 'Juniper Junos', short: 'Juniper', models: 'MX, EX, QFX, SRX, ACX',
+    exportCommand: 'show configuration | display set',
+    detect: detectJunos,
+    parse: parseJunos,
+    formatLabel: dev => 'Junos (' + dev.format + ')',
+    ipMtu(dev, i) {
+      if (i.ipMtu) return { v: i.ipMtu, how: 'family inet mtu' };
+      const p = phys(dev, i);
+      const tag = p && p.tagging ? (p.tagging === 'stacked' ? 8 : 4) : 0;
+      if (p && p.mtu) return { v: p.mtu - 14 - tag, how: `mtu physique ${p.mtu} − ${14 + tag} octets d’en-tête` };
+      return { v: 1500, how: 'valeur par défaut' };
+    },
+    isisOf(dev, i) {
+      let c = dev.isis.ifs.get(i.name);
+      if (!c && i.kind === 'unit' && !i.loopback) c = dev.isis.ifs.get('all');
+      if (!c || c.disabled) return null;
+      const levels = new Set([...c.levels].filter(l => dev.isis.globalLevels.has(l)));
+      return { levels, p2p: c.p2p, passive: c.passive, auth: c.auth, bfd: c.bfd, isoMissing: !i.iso };
+    },
+    mplsOf(dev, i) {
+      const any = s => s.has(i.name) || (s.has('all') && i.kind === 'unit' && !i.loopback);
+      return { ldp: any(dev.ldp), mplsFamily: !!i.mpls, mplsProto: any(dev.mpls), rsvp: any(dev.rsvp) };
+    },
+    l2Profile(dev, p) {
+      const units = [...dev.ifs.values()].filter(u => u.parent === p.name);
+      let untagged = null; const tagged = new Set(); let mode = null;
+      for (const u of units) {
+        if (u.l2) {
+          const vl = resolveVlans(dev, u.l2.vlans);
+          if (u.l2.mode === 'trunk') {
+            mode = 'trunk'; vl.forEach(v => tagged.add(v));
+            const nat = u.l2.native ?? p.native;
+            if (nat != null) { untagged = +nat; tagged.delete(+nat); }
+          } else {
+            mode = mode || 'access';
+            if (p.tagging && u.vlanId) tagged.add(u.vlanId); else untagged = vl[0] ?? u.vlanId ?? null;
+          }
+        } else if (u.vlanId != null && p.tagging) { tagged.add(u.vlanId); mode = mode || 'sous-interfaces taguées'; }
+        else if (allAddr(u).length || u.iso || u.mpls) { if (!p.tagging) { untagged = 'L3'; mode = mode || 'routé'; } }
+      }
+      if (p.tagging && p.native != null && untagged == null) untagged = p.native;
+      return { mode: mode || 'non configuré', untagged, tagged };
+    },
+    encapOf(dev, i) {
+      const p = phys(dev, i);
+      if (i.vlanId != null && p && p.tagging) return { tag: i.vlanId, label: 'VLAN ' + i.vlanId + ' tagué' };
+      if (p && p.tagging && i.kind === 'unit') return { tag: null, label: 'vlan-tagging sans vlan-id', broken: true };
+      return { tag: null, label: 'non tagué' };
+    },
+    ifAliases: n => [n.toLowerCase(), n.replace(/\.0$/, '').toLowerCase()],
+    ospfAdvertisesMtu: () => true,
+    ospfMtuHint: '',
+    frameLabel: p => (p.mtu || 1514) + ' (mtu physique)',
+    mplsLabel: m => m.ldp ? 'LDP' + (m.mplsFamily ? '' : ', family mpls absente') + (m.mplsProto ? '' : ', hors protocols mpls') : (m.mplsFamily ? 'family mpls sans LDP' : 'non'),
+    mplsProblems(m, nm) {
+      const p = [];
+      if (!m.mplsFamily) p.push(`${nm} : ajoutez « family mpls » sur l’unité`);
+      if (!m.mplsProto) p.push(`${nm} : l’interface doit aussi figurer sous « protocols mpls »`);
+      return p;
+    },
+    bgpRequiresGroupType: true,
+    bgpRequiresAfEnable: false,
+    bgpHoldDefault: 90,
+    routerIds: dev => ({ global: dev.routerId, ospf: dev.routerId, bgp: dev.routerId, lsr: dev.routerId }),
+    lldpDefault: false
+  });
+
+  Object.assign(V, { junosToSet, junosLines, normJIf, normJFam, parseJunos, jStatement, jBgpAttr, jInterface, detectJunos });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Constructeur : HPE Comware 7 */
+(function (V) {
+  'use strict';
+  const { addAddr, allAddr, cwSecret, expandVlans, getIf, mapNet, maskLen, name, newDev, normArea, normSpeed, parse, phys, registerVendor, secret, tok, v4int, v6big } = V;
+
+  /* ---------- HPE Comware 7 ---------- */
+  const CW_NAMES = [
+    [/^(ten-gigabitethernet|xge)/i, 'Ten-GigabitEthernet'], [/^(m-gigabitethernet|mge)/i, 'M-GigabitEthernet'],
+    [/^(twenty-fivegige|wge)/i, 'Twenty-FiveGigE'], [/^(fortygige|fge)/i, 'FortyGigE'], [/^(hundredgige|hge)/i, 'HundredGigE'],
+    [/^(gigabitethernet|ge)/i, 'GigabitEthernet'], [/^(bridge-aggregation|bagg)/i, 'Bridge-Aggregation'],
+    [/^(route-aggregation|ragg)/i, 'Route-Aggregation'], [/^(vlan-interface|vlan-int|vlanif)/i, 'Vlan-interface'],
+    [/^(loopback|loop)/i, 'LoopBack'], [/^(tunnel|tun)/i, 'Tunnel']
+  ];
+  const CW_ABBR = { 'Ten-GigabitEthernet': 'XGE', 'M-GigabitEthernet': 'MGE', 'Twenty-FiveGigE': 'WGE', FortyGigE: 'FGE', HundredGigE: 'HGE', GigabitEthernet: 'GE', 'Bridge-Aggregation': 'BAGG', 'Route-Aggregation': 'RAGG', 'Vlan-interface': 'Vlan-int', LoopBack: 'Loop' };
+  function normCwIf(n) {
+    n = String(n || '').replace(/\s+/g, '');
+    for (const [re, full] of CW_NAMES) { const m = re.exec(n); if (m && /^[\d/.:]/.test(n.slice(m[0].length))) return full + n.slice(m[0].length); }
+    return n;
+  }
+  function cwKind(n) {
+    if (/^LoopBack/.test(n)) return 'loopback';
+    if (/^Vlan-interface/.test(n)) return 'vlanif';
+    if (/^(Bridge|Route)-Aggregation\d+$/.test(n)) return 'lag';
+    if (/\.\d+$/.test(n)) return 'sub';
+    return 'phys';
+  }
+  function cwTree(text) {
+    const root = { children: [], indent: -1 }; const stack = [root];
+    for (const raw of text.split(/\r?\n/)) {
+      if (!raw.trim()) continue;
+      const l = raw.replace(/\t/g, ' '); const tr = l.trim();
+      if (tr === '#' || tr === 'return' || /^<[^>]+>/.test(tr) || /^\[[^\]]+\]/.test(tr) || /^display\s/.test(tr) || /^(!|\*\*)/.test(tr)) continue;
+      const ind = l.length - l.trimStart().length; const node = { text: tr, children: [], indent: ind };
+      while (stack.length > 1 && stack[stack.length - 1].indent >= ind) stack.pop();
+      stack[stack.length - 1].children.push(node); stack.push(node);
+    }
+    return root.children;
+  }
+  function cwAuth(t, i) {
+    const type = t[i]; if (!type) return null;
+    if (type === 'simple') return { type: 'simple', secret: cwSecret(t[i + 1], t[i + 2]) };
+    if (type === 'keychain') return { type: 'keychain', name: t[i + 1] };
+    if (/^\d+$/.test(t[i + 1] || '')) return { type, keyId: t[i + 1], secret: cwSecret(t[i + 2], t[i + 3]) };
+    return { type, secret: cwSecret(t[i + 1], t[i + 2]) };
+  }
+  function normCwFam(t) {
+    const s = t.join(' ');
+    if (/^ipv4( unicast)?$/.test(s)) return 'ipv4-unicast';
+    if (/^ipv6( unicast)?$/.test(s)) return 'ipv6-unicast';
+    if (/^vpnv4/.test(s)) return 'vpnv4';
+    if (/^vpnv6/.test(s)) return 'vpnv6';
+    if (/^l2vpn evpn/.test(s)) return 'evpn';
+    if (/^l2vpn/.test(s)) return 'l2vpn';
+    if (/^ipv4 flowspec/.test(s)) return 'flowspec';
+    if (/^ipv4 multicast/.test(s)) return 'ipv4-multicast';
+    return s;
+  }
+  const lvl = s => ({ 'level-1': [1], 'level-2': [2], 'level-1-2': [1, 2] }[s] || [1, 2]);
+
+  function parseComware(text) {
+    const dev = newDev('comware'); dev.format = 'Comware';
+    const tree = cwTree(text);
+    let lldpUndo = false;
+    for (const n of tree) {
+      const t = tok(n.text), k = t[0];
+      if (k === 'sysname') dev.hostname = t.slice(1).join(' ');
+      else if (k === 'interface') cwInterface(dev, normCwIf(t.slice(1).join('')), n.children);
+      else if (k === 'vlan') { for (const v of expandVlans(t.slice(1))) dev.vlans.set(String(v), v); }
+      else if (k === 'ospf') cwOspf(dev, t, n.children, 'ospf');
+      else if (k === 'ospfv3') cwOspf(dev, t, n.children, 'ospf3');
+      else if (k === 'isis') cwIsis(dev, t, n.children);
+      else if (k === 'bgp') cwBgp(dev, t, n.children);
+      else if (k === 'mpls' && t[1] === 'lsr-id') dev.lsrId = t[2];
+      else if (k === 'mpls' && t[1] === 'ldp' && t.length === 2) dev.ldpGlobal = true;
+      else if (k === 'lldp' && t[1] === 'global' && t[2] === 'enable') dev.lldp.enabled = true;
+      else if (k === 'undo' && t[1] === 'lldp' && t[2] === 'global') lldpUndo = true;
+      else if (k === 'router' && t[1] === 'id') dev.routerId = t[2];
+      else if (k === 'ip' && t[1] === 'vpn-instance') dev.vrfs.add(t[2]);
+    }
+    dev.lldp.enabled = lldpUndo ? false : true;
+    dev.lldp.all = !lldpUndo;
+    // Agrégats
+    for (const i of dev.ifs.values()) {
+      if (i.lagGroup) {
+        const cand = ['Route-Aggregation' + i.lagGroup, 'Bridge-Aggregation' + i.lagGroup].find(x => dev.ifs.has(x)) || ((i.linkMode === 'route' ? 'Route' : 'Bridge') + '-Aggregation' + i.lagGroup);
+        i.lag = cand; const p = getIf(dev, cand); p.kind = 'lag';
+      }
+    }
+    for (const i of dev.ifs.values()) {
+      if (i.kind === 'lag') {
+        const mem = [...dev.ifs.values()].filter(m => m.lag === i.name);
+        i.lacpMode = i.lagMode === 'dynamic' ? (mem.some(m => m.lacpPassive) ? 'passive' : 'active') : 'static';
+        i.lacpPeriod = i.lacpMode === 'static' ? null : (mem.some(m => m.lacpPeriod === 'fast') ? 'fast' : 'slow');
+      }
+    }
+    // OSPF : affectation par interface ou par commande network
+    for (const which of ['ospf', 'ospf3']) {
+      const O = dev[which];
+      for (const i of dev.ifs.values()) {
+        const c = i[which + 'Cfg'] || {};
+        let area = c.area, proc = c.proc ? O.procs.find(p => p.proc === c.proc) : null;
+        if (!area && which === 'ospf') {
+          outer: for (const P of O.procs) for (const nw of P.networks) for (const a of i.v4) {
+            const inv = (~nw.wild) >>> 0;
+            if (((a.n & inv) >>> 0) === ((nw.ip & inv) >>> 0)) { area = nw.area; proc = P; break outer; }
+          }
+        }
+        if (!area) continue;
+        const ar = O.areas[area] = O.areas[area] || { type: 'normal' };
+        const passive = !!(proc && (proc.silent.includes('all') || proc.silent.includes(i.name))) || !!c.silent;
+        O.ifs.set(i.name, { area, vrf: proc && proc.vpn, network: c.network || null, hello: c.hello ?? null, dead: c.dead ?? null,
+          auth: c.auth || null, passive, cost: c.cost ?? null, bfd: c.bfd || null, mtuEnable: !!c.mtuEnable, disabled: false, how: c.area ? 'interface' : 'network' });
+        if (proc && proc.rid) O.rid = O.rid || proc.rid;
+        void ar;
+      }
+    }
+    // IS-IS, MPLS
+    for (const i of dev.ifs.values()) {
+      if (i.mpls) dev.mpls.add(i.name);
+      if (i.ldp) dev.ldp.add(i.name);
+      if (i.rsvp) dev.rsvp.add(i.name);
+      if (!i.kind) i.kind = cwKind(i.name);
+    }
+    return dev;
+  }
+
+  function cwInterface(dev, name, children) {
+    const i = getIf(dev, name); i.kind = cwKind(name);
+    if (i.kind === 'sub') i.parent = name.replace(/\.\d+$/, '');
+    if (i.kind === 'loopback') i.loopback = true;
+    const oc = i.ospfCfg = i.ospfCfg || {}; const o3 = i.ospf3Cfg = i.ospf3Cfg || {};
+    const ic = i.isisCfg = i.isisCfg || {};
+    for (const c of children) {
+      const t = tok(c.text); const a = t[0], b = t[1];
+      if (a === 'description') i.desc = t.slice(1).join(' ');
+      else if (a === 'ip' && b === 'address') {
+        if (!v4int(t[2])) continue;
+        const len = maskLen(t[3]) ?? (/^\d+$/.test(t[3] || '') ? +t[3] : 32);
+        i.v4.push({ fam: 4, ip: t[2], len, n: v4int(t[2]), sub: t[4] === 'sub' });
+      }
+      else if (a === 'ipv6' && b === 'address' && t[2]) { if (/link-local/.test(c.text)) continue; addAddr(i, t[2].includes('/') ? t[2] : t[2] + '/' + (t[3] || 128)); }
+      else if (a === 'ip' && b === 'binding' && t[2] === 'vpn-instance') i.vrf = t[3];
+      else if (a === 'mtu') i.mtu = +b;
+      else if (a === 'ip' && b === 'mtu') i.ipMtu = +t[2];
+      else if (a === 'jumboframe' && b === 'enable') i.jumbo = t[2] ? +t[2] : true;
+      else if (a === 'shutdown') i.disabled = true;
+      else if (a === 'port' && b === 'link-mode') i.linkMode = t[2];
+      else if (a === 'port' && b === 'link-type') i.linkType = t[2];
+      else if (a === 'port' && b === 'access' && t[2] === 'vlan') i.accessVlan = +t[3];
+      else if (a === 'port' && b === 'trunk' && t[2] === 'permit' && t[3] === 'vlan') {
+        i.trunkPermit = i.trunkPermit || new Set([1]);
+        if (t[4] === 'all') i.trunkAll = true; else expandVlans(t.slice(4)).forEach(v => i.trunkPermit.add(v));
+      }
+      else if (a === 'undo' && b === 'port' && t[2] === 'trunk' && t[3] === 'permit' && t[4] === 'vlan') {
+        i.trunkPermit = i.trunkPermit || new Set([1]); expandVlans(t.slice(5)).forEach(v => i.trunkPermit.delete(v));
+      }
+      else if (a === 'port' && (b === 'trunk' || b === 'hybrid') && t[2] === 'pvid') i.pvid = +t[4];
+      else if (a === 'port' && b === 'hybrid' && t[2] === 'vlan') {
+        const kind = t[t.length - 1]; i.hybrid = i.hybrid || { tagged: new Set(), untagged: new Set() };
+        expandVlans(t.slice(3, -1)).forEach(v => i.hybrid[kind === 'tagged' ? 'tagged' : 'untagged'].add(v));
+      }
+      else if (a === 'port' && b === 'link-aggregation' && t[2] === 'group') i.lagGroup = t[3];
+      else if (a === 'link-aggregation' && b === 'mode') i.lagMode = t[2];
+      else if (a === 'link-aggregation' && b === 'selected-port' && t[2] === 'minimum') i.minLinks = +t[3];
+      else if (a === 'lacp' && b === 'period' && t[2] === 'short') i.lacpPeriod = 'fast';
+      else if (a === 'lacp' && b === 'mode' && t[2] === 'passive') i.lacpPassive = true;
+      else if (a === 'speed') i.speed = normSpeed(b);
+      else if (a === 'duplex') i.duplex = b;
+      else if (a === 'vlan-type' && b === 'dot1q' && t[2] === 'vid') i.vlanId = +t[3];
+      else if (a === 'ospf' || a === 'ospfv3') {
+        const C = a === 'ospf' ? oc : o3;
+        if (/^\d+$/.test(b) && t[2] === 'area') { C.proc = b; C.area = normArea(t[3]); }
+        else if (b === 'network-type') C.network = mapNet(t[2]);
+        else if (b === 'timer' && t[2] === 'hello') C.hello = +t[3];
+        else if (b === 'timer' && t[2] === 'dead') C.dead = +t[3];
+        else if (b === 'cost') C.cost = +t[2];
+        else if (b === 'authentication-mode') C.auth = cwAuth(t, 2);
+        else if (b === 'bfd' && t[2] === 'enable') C.bfd = C.bfd || {};
+        else if (b === 'mtu-enable') C.mtuEnable = true;
+        else if (b === 'silent' || (b === 'silent-interface')) C.silent = true;
+      }
+      else if (a === 'isis') {
+        if (b === 'enable') ic.proc = t[2] || '1';
+        else if (b === 'circuit-type' && t[2] === 'p2p') ic.p2p = true;
+        else if (b === 'circuit-level') ic.circuitLevel = t[2];
+        else if (b === 'silent') ic.silent = true;
+        else if (b === 'authentication-mode') ic.auth = { type: t[2], secret: cwSecret(t[3], t[4]) };
+        else if (b === 'bfd' && t[2] === 'enable') ic.bfd = {};
+      }
+      else if (a === 'mpls' && b === 'enable') i.mpls = true;
+      else if (a === 'mpls' && b === 'ldp' && t[2] === 'enable') i.ldp = true;
+      else if (a === 'rsvp' && b === 'enable') i.rsvp = true;
+      else if (a === 'bfd' && b === 'min-transmit-interval') { i.bfdT = i.bfdT || {}; i.bfdT.min = +t[2]; }
+      else if (a === 'bfd' && b === 'detect-multiplier') { i.bfdT = i.bfdT || {}; i.bfdT.mult = +t[2]; }
+      else if (a === 'undo' && b === 'lldp' && t[2] === 'enable') i.lldpOff = true;
+    }
+    if (oc.bfd && i.bfdT) Object.assign(oc.bfd, i.bfdT);
+    if (ic.bfd && i.bfdT) Object.assign(ic.bfd, i.bfdT);
+  }
+
+  function cwOspf(dev, t, children, which) {
+    const O = dev[which]; const P = { proc: t[1] || '1', vpn: null, rid: null, networks: [], silent: [] };
+    for (let j = 2; j < t.length; j++) { if (t[j] === 'router-id') P.rid = t[j + 1]; if (t[j] === 'vpn-instance') P.vpn = t[j + 1]; }
+    O.procs.push(P);
+    for (const c of children) {
+      const ct = tok(c.text);
+      if (ct[0] === 'area') {
+        const area = normArea(ct[1]); const ar = O.areas[area] = O.areas[area] || { type: 'normal' };
+        for (const g of c.children) {
+          const gt = tok(g.text);
+          if (gt[0] === 'network') P.networks.push({ area, ip: v4int(gt[1]) || 0, wild: v4int(gt[2]) || 0 });
+          else if (gt[0] === 'stub') ar.type = gt.includes('no-summary') ? 'stub (totally)' : 'stub';
+          else if (gt[0] === 'nssa') ar.type = 'nssa';
+          else if (gt[0] === 'authentication-mode') ar.auth = cwAuth(gt, 1);
+        }
+      } else if (ct[0] === 'silent-interface') P.silent.push(ct[1] === 'all' ? 'all' : normCwIf(ct[1]));
+      else if (ct[0] === 'router-id') P.rid = ct[1];
+    }
+    if (P.rid && !O.rid) O.rid = P.rid;
+  }
+  function cwIsis(dev, t, children) {
+    const proc = t[1] || '1'; dev.isis.enabled = true;
+    const P = dev.isis.procs[proc] = { level: 'level-1-2', nets: [] };
+    for (const c of children) {
+      const ct = tok(c.text);
+      if (ct[0] === 'network-entity') { P.nets.push(ct[1]); dev.isis.nets.push(ct[1]); }
+      else if (ct[0] === 'is-level') P.level = ct[1];
+    }
+  }
+  function cwBgp(dev, t, children) {
+    dev.bgp.as = t[1];
+    const peers = {}; const glob = {};
+    const P = (key, vrf) => { const k = (vrf || '') + '|' + key; return peers[k] = peers[k] || { key, vrf, families: new Set() }; };
+    function walk(lines, vrf, af) {
+      for (const c of lines) {
+        const ct = tok(c.text);
+        if (ct[0] === 'router-id') { if (!vrf) dev.bgp.rid = ct[1]; }
+        else if (ct[0] === 'group') { const g = P(ct[1], vrf); g.isGroup = true; if (ct[2] === 'internal' || ct[2] === 'external') g.gtype = ct[2]; }
+        else if (ct[0] === 'timer' && ct[1] === 'keepalive') { glob[vrf || ''] = { keepalive: +ct[2], hold: +ct[4] }; }
+        else if (ct[0] === 'peer') {
+          const p = P(ct[1], vrf); const x = ct.slice(2);
+          if (af) { if (x[0] === 'enable') p.families.add(af); continue; }
+          switch (x[0]) {
+            case 'as-number': p.peerAs = x[1]; break;
+            case 'group': p.group = x[1]; if (x[2] === 'as-number') p.peerAs = x[3]; break;
+            case 'connect-interface': p.connectIf = normCwIf(x[1]); break;
+            case 'ebgp-max-hop': p.multihop = true; p.ttl = x[1] ? +x[1] : 64; break;
+            case 'password': p.auth = cwSecret(x[1], x[2]); break;
+            case 'bfd': p.bfd = {}; break;
+            case 'timer':
+              if (x[1] === 'keepalive') { p.keepalive = +x[2]; p.hold = +x[4]; } else if (x[1] === 'hold') p.hold = +x[2];
+              break;
+            case 'ignore': p.shutdown = true; break;
+            case 'description': p.desc = x.slice(1).join(' '); break;
+            case 'fake-as': case 'local-as': p.localAs = x[1]; break;
+            case 'enable': p.families.add('ipv4-unicast'); break;
+          }
+        }
+        else if (ct[0] === 'address-family') walk(c.children, vrf, normCwFam(ct.slice(1)));
+        else if (ct[0] === 'ip' && ct[1] === 'vpn-instance') walk(c.children, ct[2], null);
+      }
+    }
+    walk(children, null, null);
+    for (const p of Object.values(peers)) {
+      if (p.isGroup || (!v4int(p.key) && v6big(p.key) === null)) continue;
+      const g = p.group ? peers[(p.vrf || '') + '|' + p.group] : null;
+      const pick = k => p[k] !== undefined ? p[k] : (g && g[k] !== undefined ? g[k] : undefined);
+      const G = glob[p.vrf || ''] || {};
+      let peerAs = pick('peerAs');
+      if (!peerAs && g && g.gtype === 'internal') peerAs = dev.bgp.as;
+      dev.bgp.neighbors.push({
+        ip: p.key, group: p.group || null, vrf: p.vrf, type: g && g.gtype ? g.gtype : null, peerAs, localAs: pick('localAs'),
+        connectIf: pick('connectIf'), localAddress: null, auth: pick('auth') || null, multihop: !!pick('multihop'), ttl: pick('ttl'),
+        families: new Set([...p.families, ...(g ? g.families : [])]), hold: pick('hold') ?? G.hold, bfd: pick('bfd') || null,
+        desc: p.desc || '', shutdown: !!pick('shutdown')
+      });
+    }
+  }
+
+  /* ---------- Adaptateur HPE Comware 7 ---------- */
+  function detectComware(text) {
+    if (/^\s*sysname\s+/m.test(text) || /^\s*interface\s+(Ten-GigabitEthernet|GigabitEthernet|Vlan-interface|Bridge-Aggregation|Route-Aggregation|M-GigabitEthernet|FortyGigE|LoopBack)/m.test(text)) return 0.8;
+    if (/^#\s*$/m.test(text) && /^\s*interface\s+/m.test(text)) return 0.4;
+    return 0;
+  }
+  registerVendor({
+    id: 'comware', label: 'HPE Comware 7', short: 'HPE', models: '5520, 5940, 5710, 7500…',
+    exportCommand: 'display current-configuration',
+    detect: detectComware,
+    parse: parseComware,
+    formatLabel: () => 'HPE Comware 7',
+    ipMtu(dev, i) {
+      if (i.ipMtu) return { v: i.ipMtu, how: 'ip mtu' };
+      if (i.mtu) return { v: i.mtu, how: 'mtu' };
+      const p = i.parent && dev.ifs.get(i.parent);
+      if (p && p.mtu) return { v: p.mtu, how: 'mtu de l’interface parente' };
+      return { v: 1500, how: 'valeur par défaut' };
+    },
+    isisOf(dev, i) {
+      const c = i.isisCfg; if (!c || !c.proc) return null;
+      const P = dev.isis.procs[c.proc] || { level: 'level-1-2' };
+      const cl = lvl(c.circuitLevel || 'level-1-2');
+      const levels = new Set(lvl(P.level).filter(l => cl.includes(l)));
+      return { levels, p2p: !!c.p2p, passive: !!c.silent, auth: c.auth || null, bfd: c.bfd || null };
+    },
+    mplsOf: (dev, i) => ({ ldp: !!i.ldp, mplsFamily: !!i.mpls, mplsProto: true, rsvp: !!i.rsvp, ldpGlobal: dev.ldpGlobal, lsrId: dev.lsrId }),
+    l2Profile(dev, p) {
+      if (p.lag && dev.ifs.get(p.lag)) p = dev.ifs.get(p.lag);
+      if (p.linkMode === 'route' || /^Route-Aggregation/.test(p.name)) {
+        const subs = [...dev.ifs.values()].filter(u => u.parent === p.name && u.vlanId);
+        return { mode: 'routé', untagged: allAddr(p).length ? 'L3' : null, tagged: new Set(subs.map(s => s.vlanId)) };
+      }
+      const lt = p.linkType || 'access';
+      if (lt === 'trunk') {
+        const pvid = p.pvid || 1;
+        if (p.trunkAll) return { mode: 'trunk', untagged: pvid, tagged: 'all' };
+        const perm = p.trunkPermit || new Set([1]);
+        return { mode: 'trunk', untagged: perm.has(pvid) ? pvid : null, tagged: new Set([...perm].filter(v => v !== pvid)) };
+      }
+      if (lt === 'hybrid') {
+        const h = p.hybrid || { tagged: new Set(), untagged: new Set([1]) }; const pvid = p.pvid || 1;
+        return { mode: 'hybrid', untagged: h.untagged.has(pvid) ? pvid : null, tagged: h.tagged };
+      }
+      return { mode: 'access', untagged: p.accessVlan || 1, tagged: new Set() };
+    },
+    encapOf(dev, i) {
+      if (i.kind === 'sub') return { tag: i.vlanId, label: i.vlanId != null ? 'VLAN ' + i.vlanId + ' tagué (sous-interface)' : 'sous-interface sans vlan-type', broken: i.vlanId == null };
+      if (i.kind === 'vlanif') { const v = +i.name.replace(/\D+/g, ''); return { vlanif: v, label: 'Vlan-interface ' + v }; }
+      return { tag: null, label: 'non tagué' };
+    },
+    ifAliases(n) {
+      const v = [n.toLowerCase()];
+      for (const [full, ab] of Object.entries(CW_ABBR)) if (n.startsWith(full)) { v.push((ab + n.slice(full.length)).toLowerCase()); v.push((ab + ' ' + n.slice(full.length)).toLowerCase()); }
+      return v;
+    },
+    ospfAdvertisesMtu: o => !!(o && o.mtuEnable),
+    ospfMtuHint: 'sans « ospf mtu-enable »',
+    frameLabel: p => p.jumbo ? 'jumbo ' + (p.jumbo === true ? 'activé' : p.jumbo) : String(p.mtu || 1500),
+    mplsLabel: m => m.ldp ? 'LDP' + (m.mplsFamily ? '' : ', mpls enable absent') : (m.mplsFamily ? 'mpls enable sans LDP' : 'non'),
+    mplsProblems(m, nm) {
+      const p = [];
+      if (!m.mplsFamily) p.push(`${nm} : ajoutez « mpls enable » sur l’interface`);
+      if (!m.ldpGlobal) p.push(`${nm} : « mpls ldp » global manquant`);
+      if (!m.lsrId) p.push(`${nm} : « mpls lsr-id » manquant`);
+      return p;
+    },
+    bgpRequiresGroupType: false,
+    bgpRequiresAfEnable: true,
+    bgpHoldDefault: 180,
+    routerIds: dev => ({ global: dev.routerId, ospf: dev.ospf.rid || dev.routerId, bgp: dev.bgp.rid || dev.routerId, lsr: dev.lsrId }),
+    lldpDefault: true
+  });
+
+  Object.assign(V, { CW_NAMES, CW_ABBR, normCwIf, cwKind, cwTree, cwAuth, normCwFam, lvl, parseComware, cwInterface, cwOspf, cwIsis, cwBgp, detectComware });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Vues effectives (valeurs réellement appliquées, défauts compris) */
+(function (V) {
+  'use strict';
+  const { adapter, allAddr, name, natSort, phys, sameNet, v4int, v6big } = V;
+
+  /* ---------- Vues effectives (délèguent au constructeur quand c'est spécifique) ---------- */
+  const ipMtu = (dev, i) => adapter(dev).ipMtu(dev, i);
+  const isisOf = (dev, i) => adapter(dev).isisOf(dev, i);
+  const mplsOf = (dev, i) => adapter(dev).mplsOf(dev, i);
+  const l2Profile = (dev, p) => p ? adapter(dev).l2Profile(dev, p) : null;
+  const encapOf = (dev, i) => adapter(dev).encapOf(dev, i);
+  function ospfOf(dev, i, which) {
+    const O = dev[which || 'ospf'];
+    let c = O.ifs.get(i.name);
+    if (!c && O.ifs.has('all') && i.kind === 'unit') c = O.ifs.get('all');
+    if (!c || c.disabled) return null;
+    const network = c.network || (i.loopback ? 'loopback' : 'broadcast');
+    const hello = c.hello ?? (network === 'nbma' || network === 'p2mp' ? 30 : 10);
+    const dead = c.dead ?? hello * 4;
+    const ar = O.areas[c.area] || { type: 'normal' };
+    return { area: c.area, areaType: ar.type || 'normal', network, hello, dead, auth: c.auth || ar.auth || null,
+      passive: c.passive, cost: c.cost, bfd: c.bfd, mtuEnable: c.mtuEnable, how: c.how, setHello: c.hello != null, setDead: c.dead != null, vrf: c.vrf };
+  }
+  function lagOf(dev, i) {
+    const p = phys(dev, i);
+    if (p && p.kind === 'lag') return p;
+    if (p && p.lag) return dev.ifs.get(p.lag) || null;
+    return null;
+  }
+  const members = (dev, lag) => [...dev.ifs.values()].filter(m => m.lag === lag.name).map(m => m.name).sort(natSort);
+  function carriers(dev, vlan) {
+    const out = [];
+    for (const p of dev.ifs.values()) {
+      if (p.kind !== 'phys' && p.kind !== 'lag') continue;
+      if (p.lag) continue;
+      if (p.linkMode === 'route') continue;
+      const pr = l2Profile(dev, p); if (!pr) continue;
+      if (pr.untagged === vlan) out.push({ name: p.name, tagged: false });
+      else if (pr.tagged === 'all' || (pr.tagged instanceof Set && pr.tagged.has(vlan))) out.push({ name: p.name, tagged: true });
+    }
+    return out;
+  }
+  function netParse(net) {
+    const parts = String(net).split('.'); if (parts.length < 5) return null;
+    return { sys: parts.slice(-4, -1).join('.'), area: parts.slice(0, -4).join('.') };
+  }
+  function ownerOf(dev, ip) {
+    const b = ip.includes(':') ? v6big(ip) : null;
+    for (const i of dev.ifs.values()) for (const a of allAddr(i)) if (a.ip === ip || (b !== null && a.fam === 6 && a.n === b)) return i;
+    return null;
+  }
+  function connectedIf(dev, ip) {
+    const v6 = ip.includes(':'); const x = v6 ? { fam: 6, n: v6big(ip) } : { fam: 4, n: v4int(ip) };
+    if (x.n === null) return null;
+    for (const i of dev.ifs.values()) for (const a of (v6 ? i.v6 : i.v4)) {
+      if (a.len >= (v6 ? 128 : 32)) continue;
+      if (sameNet(a, x, a.len)) return { iface: i, addr: a };
+    }
+    return null;
+  }
+  function sourceIp(dev, n) {
+    if (n.localAddress) return { ip: n.localAddress, how: 'local-address' };
+    const v6 = n.ip.includes(':');
+    if (n.connectIf) {
+      const i = dev.ifs.get(n.connectIf);
+      const a = i && (v6 ? i.v6[0] : i.v4.find(x => !x.sub));
+      return { ip: a ? a.ip : null, how: 'connect-interface ' + n.connectIf };
+    }
+    const c = connectedIf(dev, n.ip);
+    if (c) return { ip: c.addr.ip, how: 'interface ' + c.iface.name };
+    return { ip: null, how: 'adresse de l’interface de sortie (non déterminable)' };
+  }
+
+  Object.assign(V, { ipMtu, isisOf, mplsOf, l2Profile, encapOf, ospfOf, lagOf, members, carriers, netParse, ownerOf, connectedIf, sourceIp });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Contrôles par lien : adressage, MTU, VLAN, LACP, OSPF, IS-IS, MPLS */
+(function (V) {
+  'use strict';
+  const { R, adapter, allAddr, carriers, cidr, cmpSecret, encapOf, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, l3Ifs, lagOf, lenMask, members, mplsOf, name, net4, netParse, ospfOf, phys, sameNet, v4str } = V;
+
+  /* ---------- Résultats ---------- */
+
+  function findLinks(A, B) {
+    const links = [], seen = new Set();
+    for (const ia of l3Ifs(A)) for (const ib of l3Ifs(B)) {
+      for (const x of allAddr(ia)) for (const y of allAddr(ib)) {
+        if (x.fam !== y.fam) continue;
+        const host = x.fam === 4 ? 32 : 128;
+        if (x.len >= host && y.len >= host) continue;
+        if (x.fam === 6 && /^fe80/i.test(x.ip)) continue;
+        const l = Math.min(x.len, y.len);
+        if (l < (x.fam === 4 ? 8 : 16)) continue;
+        if (!sameNet(x, y, l)) continue;
+        const key = ia.name + '|' + ib.name;
+        if (seen.has(key)) continue;
+        seen.add(key); links.push({ a: ia, b: ib, how: 'auto', x, y });
+      }
+    }
+    return links;
+  }
+  const ifVariants = (dev, n) => adapter(dev).ifAliases(n);
+  function suggestPairs(A, B, existing) {
+    const out = [];
+    if (!A.hostname || !B.hostname) return out;
+    const has = (d, s) => d && s && d.toLowerCase().includes(s.toLowerCase());
+    const cands = d => [...d.ifs.values()].filter(i => (i.kind === 'phys' || i.kind === 'lag') && !i.lag && i.desc);
+    for (const ia of cands(A)) {
+      if (!has(ia.desc, B.hostname)) continue;
+      for (const ib of cands(B)) {
+        if (!has(ib.desc, A.hostname)) continue;
+        const ok = ifVariants(B, ib.name).some(v => ia.desc.toLowerCase().includes(v)) || ifVariants(A, ia.name).some(v => ib.desc.toLowerCase().includes(v));
+        if (!ok) continue;
+        if (existing.some(l => (phys(A, l.a) === ia && phys(B, l.b) === ib) || (l.a === ia && l.b === ib))) continue;
+        out.push({ a: ia, b: ib, how: 'description' });
+      }
+    }
+    return out;
+  }
+
+  function checkLink(A, ia, B, ib) {
+    const res = [];
+    const nA = name(A), nB = name(B);
+    // --- Adressage
+    for (const fam of [4, 6]) {
+      const xs = fam === 4 ? ia.v4 : ia.v6, ys = fam === 4 ? ib.v4 : ib.v6;
+      if (!xs.length && !ys.length) continue;
+      const lab = fam === 4 ? 'Adresse IPv4' : 'Adresse IPv6';
+      let pair = null;
+      for (const x of xs) for (const y of ys) { const l = Math.min(x.len, y.len); if (!pair && sameNet(x, y, l)) pair = [x, y]; }
+      if (!pair) {
+        if (xs.length && ys.length) res.push(R('Adressage', lab, 'err', xs.map(cidr).join(', '), ys.map(cidr).join(', '), 'Aucune adresse dans le même sous-réseau.'));
+        else res.push(R('Adressage', lab, fam === 4 ? 'warn' : 'info', xs.map(cidr).join(', ') || 'aucune', ys.map(cidr).join(', ') || 'aucune', `IPv${fam} n’est configuré que d’un côté.`));
+        continue;
+      }
+      const [x, y] = pair;
+      if (x.n === y.n) { res.push(R('Adressage', lab, 'err', cidr(x), cidr(y), 'Adresse identique des deux côtés : conflit IP.')); continue; }
+      if (x.len !== y.len) { res.push(R('Adressage', lab, 'err', cidr(x), cidr(y), `Masques différents (/${x.len} et /${y.len}) : les deux côtés n’ont pas la même vision du sous-réseau.`)); continue; }
+      if (fam === 4 && x.len <= 30) {
+        const bad = a => { const h = (~lenMask(a.len)) >>> 0; const host = (a.n & h) >>> 0; return host === 0 || host === h; };
+        if (bad(x) || bad(y)) { res.push(R('Adressage', lab, 'err', cidr(x), cidr(y), 'Une adresse correspond à l’adresse réseau ou de broadcast du sous-réseau.')); continue; }
+      }
+      const netS = fam === 4 ? v4str(net4(x.n, x.len)) + '/' + x.len : 'préfixe /' + x.len;
+      res.push(R('Adressage', lab, 'ok', cidr(x), cidr(y), 'Même sous-réseau : ' + netS + '.'));
+    }
+    const hasIp = allAddr(ia).length && allAddr(ib).length;
+    if ((ia.vrf || ib.vrf) && hasIp) res.push(R('Adressage', 'Table de routage', 'info', ia.vrf || 'globale', ib.vrf || 'globale', 'Les noms de VRF sont locaux ; vérifiez qu’il s’agit bien du même service.'));
+
+    // --- État administratif
+    const pa = phys(A, ia), pb = phys(B, ib);
+    const offA = ia.disabled || (pa && pa.disabled), offB = ib.disabled || (pb && pb.disabled);
+    res.push(R('Interface', 'État administratif', offA || offB ? 'warn' : 'ok', offA ? 'désactivée' : 'active', offB ? 'désactivée (shutdown)' : 'active',
+      offA || offB ? 'Une interface est désactivée : le lien ne montera pas.' : 'Les deux interfaces sont actives.'));
+
+    // --- Encapsulation VLAN (lien L3)
+    if (hasIp) {
+      const ea = encapOf(A, ia), eb = encapOf(B, ib);
+      if (ea.broken || eb.broken) res.push(R('Interface', 'Encapsulation', 'err', ea.label, eb.label, 'Une sous-interface est déclarée sans identifiant de VLAN.'));
+      else if (eb.vlanif != null || ea.vlanif != null) {
+        const [ej, ec, dc, side] = eb.vlanif != null ? [ea, eb, B, 'B'] : [eb, ea, A, 'A'];
+        const v = ec.vlanif; const car = carriers(dc, v);
+        const tagNeed = ej.tag != null;
+        if (tagNeed && ej.tag !== v) res.push(R('Interface', 'Encapsulation', 'err', side === 'B' ? ea.label : eb.label, side === 'B' ? eb.label : ea.label, `Trames taguées VLAN ${ej.tag} en face d’une interface VLAN ${v} : elles n’arriveront pas dans le bon VLAN.`));
+        else {
+          const good = car.filter(c => c.tagged === tagNeed);
+          const msg = good.length
+            ? `VLAN ${v} transporté ${tagNeed ? 'tagué' : 'non tagué'} par : ${good.map(c => c.name).join(', ')}.`
+            : car.length ? `Le VLAN ${v} est bien sur ${car.map(c => c.name).join(', ')}, mais ${tagNeed ? 'non tagué' : 'tagué'} : l’encapsulation ne correspond pas.`
+              : `Aucun port ne transporte le VLAN ${v} : le lien ne peut pas fonctionner.`;
+          res.push(R('Interface', 'Encapsulation', good.length ? 'ok' : 'err', ea.label, eb.label, msg));
+        }
+      } else if ((ea.tag ?? null) !== (eb.tag ?? null)) {
+        res.push(R('Interface', 'Encapsulation', 'err', ea.label, eb.label, ea.tag != null && eb.tag != null ? 'Les identifiants de VLAN sont différents.' : 'Un côté tague les trames, l’autre non.'));
+      } else res.push(R('Interface', 'Encapsulation', 'ok', ea.label, eb.label, 'Encapsulation identique.'));
+    }
+
+    // --- MTU
+    const oA = ospfOf(A, ia), oB = ospfOf(B, ib), sA = isisOf(A, ia), sB = isisOf(B, ib);
+    if (hasIp) {
+      const ma = ipMtu(A, ia), mb = ipMtu(B, ib);
+      if (ma.v === mb.v) res.push(R('Interface', 'MTU IP', 'ok', `${ma.v} (${ma.how})`, `${mb.v} (${mb.how})`, 'MTU IP identique.'));
+      else {
+        let sev = 'warn', msg = 'MTU IP différente : risque de pertes sur les gros paquets (MPLS, VPN, jumbo).';
+        if (oA && oB) {
+          const silent = [[A, oA], [B, oB]].filter(([d, o]) => !adapter(d).ospfAdvertisesMtu(o));
+          if (!silent.length) { sev = 'err'; msg = 'MTU IP différente : l’adjacence OSPF restera bloquée en ExStart/Exchange.'; }
+          else msg = 'MTU IP différente. ' + silent.map(([d]) => `${name(d)} n’annonce pas sa MTU dans les paquets DD${adapter(d).ospfMtuHint ? ' (' + adapter(d).ospfMtuHint + ')' : ''}`).join(' ; ') + ', donc l’adjacence monte quand même, mais les gros paquets seront perdus.';
+        }
+        if (sA && sB) { const isisMsg = 'IS-IS : les hellos sont complétés à la MTU, l’adjacence sera refusée par le côté à plus petite MTU.'; msg = sev === 'err' || (oA && oB) ? msg + ' ' + isisMsg : 'MTU IP différente. ' + isisMsg; sev = 'err'; }
+        res.push(R('Interface', 'MTU IP', sev, `${ma.v} (${ma.how})`, `${mb.v} (${mb.how})`, msg));
+      }
+    }
+
+    // --- Agrégats
+    const la = lagOf(A, ia), lb = lagOf(B, ib);
+    if (la || lb) {
+      if (!la || !lb) res.push(R('Agrégat', 'Type de lien', ib.kind === 'vlanif' || ia.kind === 'vlanif' ? 'info' : 'warn', la ? la.name : 'interface simple', lb ? lb.name : 'interface simple',
+        ib.kind === 'vlanif' || ia.kind === 'vlanif' ? 'L’autre côté est une interface VLAN : comparez l’agrégat via une paire manuelle.' : 'Un côté est un agrégat, l’autre une interface simple.'));
+      else {
+        const ma = la.lacpMode || 'static', mb = lb.lacpMode || 'static';
+        const lab = m => m === 'static' ? 'statique (sans LACP)' : 'LACP ' + m;
+        if (ma === 'static' || mb === 'static') res.push(R('Agrégat', 'Mode', ma === mb ? 'warn' : 'err', lab(ma), lab(mb), ma === mb ? 'Agrégat statique des deux côtés : fonctionne, mais aucune détection de mauvais câblage.' : 'LACP d’un côté, statique de l’autre : l’agrégat ne montera pas correctement.'));
+        else if (ma === 'passive' && mb === 'passive') res.push(R('Agrégat', 'Mode', 'err', lab(ma), lab(mb), 'LACP passif des deux côtés : personne n’initie la négociation.'));
+        else res.push(R('Agrégat', 'Mode', 'ok', lab(ma), lab(mb), 'Modes LACP compatibles.'));
+        if (ma !== 'static' && mb !== 'static') {
+          const pA = la.lacpPeriod || 'slow', pB = lb.lacpPeriod || 'slow';
+          const lp = p => p === 'fast' ? 'rapide (1 s)' : 'lente (30 s)';
+          res.push(R('Agrégat', 'Cadence LACP', pA === pB ? 'ok' : 'warn', lp(pA), lp(pB), pA === pB ? 'Même cadence.' : 'Cadences différentes : l’agrégat fonctionne, mais la détection de panne est asymétrique. Junos est en rapide par défaut, HPE en lente (« lacp period short » pour aligner).'));
+        }
+        const mA = members(A, la), mB = members(B, lb);
+        const sevM = !mA.length || !mB.length ? 'err' : (mA.length === mB.length ? 'ok' : 'warn');
+        res.push(R('Agrégat', 'Membres', sevM, `${mA.length} : ${mA.join(', ') || 'aucun'}`, `${mB.length} : ${mB.join(', ') || 'aucun'}`,
+          sevM === 'err' ? 'Un agrégat n’a aucun membre.' : sevM === 'warn' ? 'Nombre de membres différent : vérifiez le câblage.' : 'Même nombre de membres.'));
+        if (la.minLinks || lb.minLinks) res.push(R('Agrégat', 'Liens minimum', (la.minLinks || 1) === (lb.minLinks || 1) ? 'ok' : 'info', la.minLinks || 1, lb.minLinks || 1, 'Seuil sous lequel l’agrégat tombe.'));
+      }
+    }
+
+    // --- Vitesse / duplex
+    const qa = la || pa, qb = lb || pb;
+    if (qa && qb && qa.kind !== 'vlanif' && qb.kind !== 'vlanif' && (qa.speed != null || qb.speed != null || qa.duplex || qb.duplex)) {
+      const spA = qa.speed, spB = qb.speed;
+      if (spA != null || spB != null) {
+        const sev = spA != null && spB != null && spA !== 'auto' && spB !== 'auto' ? (spA === spB ? 'ok' : 'err') : (spA === spB ? 'ok' : 'warn');
+        res.push(R('Interface', 'Vitesse', sev, fmtSpeed(spA), fmtSpeed(spB), sev === 'ok' ? 'Vitesses cohérentes.' : sev === 'err' ? 'Vitesses forcées différentes : pas de lien.' : 'Vitesse forcée d’un seul côté : la négociation peut échouer.'));
+      }
+      const dA = qa.duplex || 'auto', dB = qb.duplex || 'auto';
+      if (qa.duplex || qb.duplex) res.push(R('Interface', 'Duplex', dA === dB ? 'ok' : 'warn', dA, dB, dA === dB ? 'Duplex identique.' : 'Duplex forcé d’un côté ou différent : risque de duplex mismatch (erreurs CRC, collisions tardives).'));
+    }
+
+    // --- Niveau 2 (paires physiques)
+    if (!hasIp) {
+      const L = l2Profile(A, pa), M = l2Profile(B, pb);
+      if (L && M && !(L.mode === 'non configuré' && M.mode === 'non configuré')) {
+        res.push(R('Niveau 2', 'Mode du port', 'info', L.mode, M.mode, ''));
+        const u = x => x == null ? 'aucun (rejeté)' : x === 'L3' ? 'routé (non tagué)' : 'VLAN ' + x;
+        const uA = L.untagged, uB = M.untagged;
+        let sev = 'ok', msg = 'Trafic non tagué cohérent.';
+        if (uA == null && uB == null) msg = 'Pas de trafic non tagué des deux côtés.';
+        else if (uA == null || uB == null) { sev = 'warn'; msg = `Le trafic non tagué (${u(uA ?? uB)}) envoyé par ${uA == null ? nB : nA} sera rejeté en face.`; }
+        else if (uA === 'L3' || uB === 'L3') msg = 'Côté routé ↔ VLAN non tagué : cohérent si c’est voulu.';
+        else if (uA !== uB) { sev = 'err'; msg = `VLAN natif/accès différent : le VLAN ${uA} de ${nA} fusionne avec le VLAN ${uB} de ${nB}.`; }
+        res.push(R('Niveau 2', 'VLAN non tagué', sev, u(uA), u(uB), msg));
+        const tA = L.tagged, tB = M.tagged;
+        if (tA === 'all' || tB === 'all') res.push(R('Niveau 2', 'VLAN tagués', 'info', fmtVlans(tA), fmtVlans(tB), '« Tous les VLAN » d’un côté : vérifiez que la liste de l’autre côté est complète.'));
+        else if (tA.size || tB.size) {
+          const onlyA = [...tA].filter(v => !tB.has(v)), onlyB = [...tB].filter(v => !tA.has(v));
+          const ok = !onlyA.length && !onlyB.length;
+          res.push(R('Niveau 2', 'VLAN tagués', ok ? 'ok' : 'warn', fmtVlans(tA), fmtVlans(tB),
+            ok ? 'Mêmes VLAN autorisés.' : [onlyA.length ? `Seulement côté ${nA} : ${fmtVlans(onlyA)}.` : '', onlyB.length ? `Seulement côté ${nB} : ${fmtVlans(onlyB)}.` : ''].filter(Boolean).join(' ')));
+        }
+      }
+      // MTU L2 (info)
+      if (pa && pb && (pa.mtu || pb.mtu || pb.jumbo || pa.jumbo)) {
+        const fa = adapter(A).frameLabel(pa), fb = adapter(B).frameLabel(pb);
+        res.push(R('Niveau 2', 'Taille de trame', 'info', fa, fb, 'Junos compte l’en-tête Ethernet dans sa MTU physique ; HPE l’exprime en taille de trame jumbo. Vérifiez que les deux couvrent le trafic attendu.'));
+      }
+    }
+
+    // --- OSPF
+    checkOspf(res, A, B, oA, oB, 'OSPF');
+    checkOspf(res, A, B, ospfOf(A, ia, 'ospf3'), ospfOf(B, ib, 'ospf3'), 'OSPFv3');
+    // --- IS-IS
+    checkIsis(res, A, B, sA, sB);
+    // --- MPLS
+    if (hasIp) checkMpls(res, A, B, mplsOf(A, ia), mplsOf(B, ib));
+    return res;
+  }
+
+  function fmtAuth(a) {
+    if (!a) return 'aucune';
+    if (a.type === 'keychain') return 'keychain ' + a.name;
+    return a.type + (a.keyId ? ' clé ' + a.keyId : '') + (a.secret ? ', ' + fmtSecret(a.secret) : '');
+  }
+  function checkOspf(res, A, B, oA, oB, P) {
+    if (!oA && !oB) return;
+    if (!oA || !oB) {
+      res.push(R(P, 'Activation', 'err', oA ? 'actif, area ' + oA.area : 'non activé', oB ? 'actif, area ' + oB.area : 'non activé', P + ' n’est actif que d’un côté : aucune adjacence.'));
+      return;
+    }
+    res.push(R(P, 'Area', oA.area === oB.area ? 'ok' : 'err', oA.area, oB.area, oA.area === oB.area ? 'Même area.' : 'Areas différentes : les hellos sont rejetés.'));
+    if (oA.area === oB.area) res.push(R(P, 'Type d’area', oA.areaType === oB.areaType ? 'ok' : 'err', oA.areaType, oB.areaType, oA.areaType === oB.areaType ? 'Même type d’area.' : 'Options stub/NSSA différentes : les hellos sont rejetés.'));
+    if (oA.passive || oB.passive) res.push(R(P, 'Interface passive', 'err', oA.passive ? 'passive' : 'active', oB.passive ? 'passive (silent)' : 'active', 'Une interface passive n’envoie pas de hello : pas d’adjacence.'));
+    const netOk = oA.network === oB.network;
+    res.push(R(P, 'Type de réseau', netOk ? 'ok' : 'err', oA.network, oB.network, netOk ? 'Même type de réseau.' : 'Types de réseau différents : élection DR d’un côté seulement, adjacence instable ou routes absentes.'));
+    const tOk = oA.hello === oB.hello && oA.dead === oB.dead;
+    res.push(R(P, 'Timers hello / dead', tOk ? 'ok' : 'err', `${oA.hello} s / ${oA.dead} s${oA.setHello || oA.setDead ? '' : ' (défaut)'}`, `${oB.hello} s / ${oB.dead} s${oB.setHello || oB.setDead ? '' : ' (défaut)'}`,
+      tOk ? 'Timers identiques.' : 'Timers différents : les hellos sont rejetés, pas d’adjacence.'));
+    if (P === 'OSPF') {
+      const ta = oA.auth ? oA.auth.type : 'none', tb = oB.auth ? oB.auth.type : 'none';
+      if (ta === 'none' && tb === 'none') res.push(R(P, 'Authentification', 'ok', 'aucune', 'aucune', 'Pas d’authentification des deux côtés.'));
+      else if (ta !== tb) {
+        const near = (ta === 'md5' && tb === 'hmac-md5') || (tb === 'md5' && ta === 'hmac-md5');
+        res.push(R(P, 'Authentification', near ? 'warn' : 'err', fmtAuth(oA.auth), fmtAuth(oB.auth), near ? 'md5 et hmac-md5 : vérifiez l’interopérabilité en labo, préférez « md5 » des deux côtés.' : 'Types d’authentification différents : adjacence refusée.'));
+      } else {
+        if ((oA.auth.keyId || oB.auth.keyId) && oA.auth.keyId !== oB.auth.keyId) res.push(R(P, 'Authentification', 'err', fmtAuth(oA.auth), fmtAuth(oB.auth), 'Identifiants de clé différents : adjacence refusée.'));
+        else { const c = cmpSecret(oA.auth.secret, oB.auth.secret); res.push(R(P, 'Authentification', c.sev, fmtAuth(oA.auth), fmtAuth(oB.auth), c.msg)); }
+      }
+    }
+    if (oA.cost != null || oB.cost != null) res.push(R(P, 'Coût', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'ok' : 'info', oA.cost ?? 'auto (bande passante)', oB.cost ?? 'auto (bande passante)', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'Coûts symétriques.' : 'Coûts asymétriques : le trafic aller et retour peut prendre des chemins différents.'));
+    if (oA.bfd || oB.bfd) res.push(R(P, 'BFD', oA.bfd && oB.bfd ? 'ok' : 'warn', oA.bfd ? 'activé' + (oA.bfd.min ? ` (${oA.bfd.min} ms × ${oA.bfd.mult || 3})` : '') : 'non', oB.bfd ? 'activé' + (oB.bfd.min ? ` (${oB.bfd.min} ms × ${oB.bfd.mult || 3})` : '') : 'non',
+      oA.bfd && oB.bfd ? 'BFD des deux côtés (les timers sont négociés).' : 'BFD d’un seul côté : la session BFD ne montera pas, pas de détection rapide.'));
+  }
+  function checkIsis(res, A, B, sA, sB) {
+    if (!sA && !sB) return;
+    if (!sA || !sB) { res.push(R('IS-IS', 'Activation', 'err', sA ? 'actif' : 'non activé', sB ? 'actif' : 'non activé', 'IS-IS n’est actif que d’un côté : aucune adjacence.')); return; }
+    if (sA.isoMissing) res.push(R('IS-IS', 'Famille ISO', 'err', 'family iso absente', '—', 'Junos : sans « family iso » sur l’unité, IS-IS ne tourne pas sur cette interface.'));
+    if (sA.passive || sB.passive) res.push(R('IS-IS', 'Interface passive', 'err', sA.passive ? 'passive' : 'active', sB.passive ? 'silent' : 'active', 'Une interface passive n’établit pas d’adjacence.'));
+    res.push(R('IS-IS', 'Type de circuit', sA.p2p === sB.p2p ? 'ok' : 'err', sA.p2p ? 'point à point' : 'broadcast', sB.p2p ? 'point à point' : 'broadcast', sA.p2p === sB.p2p ? 'Même type de circuit.' : 'Point à point d’un côté, broadcast de l’autre : pas d’adjacence.'));
+    const inter = [...sA.levels].filter(l => sB.levels.has(l));
+    const fl = s => [...s].sort().map(l => 'L' + l).join(' + ') || 'aucun';
+    if (!inter.length) res.push(R('IS-IS', 'Niveaux', 'err', fl(sA.levels), fl(sB.levels), 'Aucun niveau commun : pas d’adjacence.'));
+    else {
+      let sev = 'ok', msg = 'Niveau(x) commun(s) : ' + inter.map(l => 'L' + l).join(' + ') + '.';
+      if (inter.includes(1)) {
+        const aA = new Set(A.isis.nets.map(netParse).filter(Boolean).map(x => x.area)), aB = new Set(B.isis.nets.map(netParse).filter(Boolean).map(x => x.area));
+        if (aA.size && aB.size && ![...aA].some(x => aB.has(x))) { sev = inter.includes(2) ? 'warn' : 'err'; msg = 'Areas IS-IS différentes : l’adjacence L1 ne montera pas' + (inter.includes(2) ? ', seule la L2 fonctionnera.' : '.'); }
+      }
+      res.push(R('IS-IS', 'Niveaux', sev, fl(sA.levels), fl(sB.levels), msg));
+    }
+    const hA = !!(sA.auth && sA.auth.secret), hB = !!(sB.auth && sB.auth.secret);
+    if (hA || hB) { const c = cmpSecret(sA.auth && sA.auth.secret, sB.auth && sB.auth.secret); res.push(R('IS-IS', 'Authentification des hellos', c.sev, hA ? (sA.auth.type || 'md5') + ', ' + fmtSecret(sA.auth.secret) : 'aucune', hB ? (sB.auth.type || 'md5') + ', ' + fmtSecret(sB.auth.secret) : 'aucune', c.msg)); }
+    if (sA.bfd || sB.bfd) res.push(R('IS-IS', 'BFD', sA.bfd && sB.bfd ? 'ok' : 'warn', sA.bfd ? 'activé' : 'non', sB.bfd ? 'activé' : 'non', sA.bfd && sB.bfd ? 'BFD des deux côtés.' : 'BFD d’un seul côté : pas de détection rapide.'));
+  }
+  function checkMpls(res, A, B, mA, mB) {
+    const any = m => m.ldp || m.mplsFamily || m.rsvp;
+    if (!any(mA) && !any(mB)) return;
+    const lab = (m, d) => adapter(d).mplsLabel(m);
+    if (mA.ldp !== mB.ldp) res.push(R('MPLS', 'LDP', 'err', lab(mA, A), lab(mB, B), 'LDP n’est actif que d’un côté : pas de session LDP, les LSP ne passeront pas par ce lien.'));
+    else if (mA.ldp) {
+      const probs = [...adapter(A).mplsProblems(mA, name(A)), ...adapter(B).mplsProblems(mB, name(B))];
+      res.push(R('MPLS', 'LDP', probs.length ? 'err' : 'ok', lab(mA, A), lab(mB, B), probs.length ? probs.join(' ; ') + '.' : 'LDP actif des deux côtés.'));
+    }
+    if (mA.rsvp || mB.rsvp) res.push(R('MPLS', 'RSVP-TE', mA.rsvp === mB.rsvp ? 'ok' : 'warn', mA.rsvp ? 'actif' : 'non', mB.rsvp ? 'actif' : 'non', mA.rsvp === mB.rsvp ? 'RSVP des deux côtés.' : 'RSVP d’un seul côté : les tunnels TE ne passeront pas ici.'));
+  }
+
+  Object.assign(V, { findLinks, ifVariants, suggestPairs, checkLink, fmtAuth, checkOspf, checkIsis, checkMpls });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Contrôles des sessions BGP */
+(function (V) {
+  'use strict';
+  const { R, adapter, cmpSecret, connectedIf, fmtSecret, name, ownerOf, sourceIp } = V;
+
+  /* ---------- BGP ---------- */
+  function findSessions(A, B) {
+    const S = [];
+    for (const n of A.bgp.neighbors) {
+      if (!ownerOf(B, n.ip)) continue;
+      const src = sourceIp(A, n);
+      const m = B.bgp.neighbors.find(m => src.ip && m.ip === src.ip && ownerOf(A, m.ip))
+        || B.bgp.neighbors.find(m => ownerOf(A, m.ip) && sourceIp(B, m).ip === n.ip && !S.some(s => s.b === m));
+      S.push({ a: n, b: m || null });
+    }
+    for (const m of B.bgp.neighbors) {
+      if (!ownerOf(A, m.ip) || S.some(s => s.b === m)) continue;
+      S.push({ a: null, b: m });
+    }
+    return S;
+  }
+  const FAM_LABEL = { 'ipv4-unicast': 'IPv4 unicast', 'ipv6-unicast': 'IPv6 unicast', vpnv4: 'VPNv4', vpnv6: 'VPNv6', evpn: 'EVPN', l2vpn: 'L2VPN', 'ipv4-labeled': 'IPv4 labeled', 'ipv6-labeled': 'IPv6 labeled (6PE)', flowspec: 'Flowspec', rtc: 'Route-target', 'ipv4-multicast': 'IPv4 multicast' };
+  const famL = s => [...s].map(f => FAM_LABEL[f] || f).join(', ') || 'aucune';
+  function checkSession(A, B, s) {
+    const res = []; const n = s.a, m = s.b;
+    if (!n || !m) {
+      const who = n ? A : B, x = n || m;
+      res.push(R('BGP', 'Réciprocité', 'err', n ? 'neighbor ' + n.ip : 'absent', m ? 'peer ' + m.ip : 'absent', `Session déclarée uniquement sur ${name(who)} (vers ${x.ip}) : elle restera en Active/Connect.`));
+      return res;
+    }
+    res.push(R('BGP', 'Réciprocité', 'ok', 'neighbor ' + n.ip, 'peer ' + m.ip, 'Session déclarée des deux côtés.'));
+    const sa = sourceIp(A, n), sb = sourceIp(B, m);
+    const addrProbs = [];
+    if (sa.ip && sa.ip !== m.ip) addrProbs.push(`${name(A)} source depuis ${sa.ip} (${sa.how}), mais ${name(B)} attend ${m.ip}`);
+    if (sb.ip && sb.ip !== n.ip) addrProbs.push(`${name(B)} source depuis ${sb.ip} (${sb.how}), mais ${name(A)} attend ${n.ip}`);
+    if (!sa.ip && !connectedIf(A, n.ip)) addrProbs.push(`${name(A)} : définissez « local-address » pour une session entre loopbacks`);
+    if (!sb.ip && !connectedIf(B, m.ip)) addrProbs.push(`${name(B)} : définissez « peer ${m.ip} connect-interface » pour une session entre loopbacks`);
+    res.push(R('BGP', 'Adresses de session', addrProbs.length ? 'err' : 'ok', `${sa.ip || '?'} → ${n.ip}`, `${sb.ip || '?'} → ${m.ip}`, addrProbs.length ? addrProbs.join(' ; ') + '. La connexion TCP sera refusée.' : 'Chaque côté source depuis l’adresse attendue par l’autre.'));
+    const lasA = n.localAs || A.bgp.as, lasB = m.localAs || B.bgp.as;
+    const pA = n.peerAs, pB = m.peerAs;
+    const asOk1 = pA && String(pA) === String(lasB), asOk2 = pB && String(pB) === String(lasA);
+    res.push(R('BGP', `AS attendu pour ${name(B)}`, asOk1 ? 'ok' : 'err', pA ? 'peer-as ' + pA : 'peer-as absent', 'AS local ' + (lasB || '?'), asOk1 ? 'Correspond.' : `${name(A)} attend l’AS ${pA || '?'} mais ${name(B)} s’annonce en ${lasB || '?'} : NOTIFICATION « Bad Peer AS ».`));
+    res.push(R('BGP', `AS attendu pour ${name(A)}`, asOk2 ? 'ok' : 'err', 'AS local ' + (lasA || '?'), pB ? 'as-number ' + pB : 'as-number absent', asOk2 ? 'Correspond.' : `${name(B)} attend l’AS ${pB || '?'} mais ${name(A)} s’annonce en ${lasA || '?'} : NOTIFICATION « Bad Peer AS ».`));
+    const ibgp = String(lasA) === String(lasB);
+    const typeIssues = [];
+    if (n.type === 'internal' && !ibgp) typeIssues.push(`${name(A)} : groupe « type internal » pour une session eBGP`);
+    if (n.type === 'external' && ibgp) typeIssues.push(`${name(A)} : groupe « type external » pour une session iBGP`);
+    if (!n.type && adapter(A).bgpRequiresGroupType) typeIssues.push(`${name(A)} : « type » non défini sur le groupe ${n.group}`);
+    res.push(R('BGP', 'Type de session', typeIssues.length ? 'err' : 'ok', (n.type || '?') + (n.group ? ' (groupe ' + n.group + ')' : ''), (m.type || (ibgp ? 'internal' : 'external')) + (m.group ? ' (groupe ' + m.group + ')' : ''), typeIssues.length ? typeIssues.join(' ; ') + '.' : (ibgp ? 'iBGP' : 'eBGP') + ' cohérent.'));
+    if (!ibgp) {
+      const dA = !!connectedIf(A, n.ip), dB = !!connectedIf(B, m.ip);
+      const needA = !dA && !n.multihop, needB = !dB && !m.multihop;
+      if (!dA || !dB || n.multihop || m.multihop) {
+        res.push(R('BGP', 'Multihop eBGP', needA || needB ? 'err' : 'ok',
+          dA ? 'voisin direct' : (n.multihop ? 'multihop' + (n.ttl ? ' ttl ' + n.ttl : '') : 'multihop absent'),
+          dB ? 'voisin direct' : (m.multihop ? 'ebgp-max-hop ' + (m.ttl || '') : 'ebgp-max-hop absent'),
+          needA || needB ? [needA ? `${name(A)} : ajoutez « multihop ttl 2 »` : '', needB ? `${name(B)} : ajoutez « peer ${m.ip} ebgp-max-hop 2 »` : ''].filter(Boolean).join(' ; ') + '. Sans cela, les paquets eBGP partent avec un TTL de 1.' : 'TTL suffisant pour atteindre le voisin.'));
+      }
+    }
+    const c = cmpSecret(n.auth, m.auth);
+    res.push(R('BGP', 'Mot de passe MD5', c.sev, fmtSecret(n.auth), fmtSecret(m.auth), c.msg));
+    const explicit = x => x.families && x.families.size;
+    const famOf = (d, x) => adapter(d).bgpRequiresAfEnable ? (x.families || new Set()) : (explicit(x) ? x.families : new Set([x.ip.includes(':') ? 'ipv6-unicast' : 'ipv4-unicast']));
+    const fA = famOf(A, n), fB = famOf(B, m);
+    const empty = [[A, n, fA], [B, m, fB]].find(e => !e[2].size);
+    const inter = [...fA].filter(f => fB.has(f)), onlyA = [...fA].filter(f => !fB.has(f)), onlyB = [...fB].filter(f => !fA.has(f));
+    let fsev = 'ok', fmsg = 'Familles identiques.';
+    if (empty) { fsev = 'err'; fmsg = `${name(empty[0])} : aucune famille activée pour ${empty[1].ip} (par exemple « peer ${empty[1].ip} enable » sous address-family) : aucune route n’est échangée.`; }
+    else if (!inter.length) { fsev = 'err'; fmsg = 'Aucune famille d’adresses commune : la session tombera après l’OPEN.'; }
+    else if (onlyA.length || onlyB.length) { fsev = 'warn'; fmsg = 'Familles non négociées : ' + [onlyA.length ? `${famL(onlyA)} (seulement ${name(A)})` : '', onlyB.length ? `${famL(onlyB)} (seulement ${name(B)})` : ''].filter(Boolean).join(', ') + '.'; }
+    res.push(R('BGP', 'Familles d’adresses', fsev, famL(fA) + (explicit(n) || adapter(A).bgpRequiresAfEnable ? '' : ' (défaut)'), famL(fB) + (explicit(m) || adapter(B).bgpRequiresAfEnable ? '' : ' (défaut)'), fmsg));
+    const hA = n.hold ?? adapter(A).bgpHoldDefault, hB = m.hold ?? adapter(B).bgpHoldDefault;
+    res.push(R('BGP', 'Hold time', hA === hB ? 'ok' : 'info', hA + ' s' + (n.hold == null ? ' (défaut)' : ''), hB + ' s' + (m.hold == null ? ' (défaut)' : ''), hA === hB ? 'Identique.' : `Différent : la valeur négociée sera ${Math.min(hA, hB)} s.`));
+    if (n.bfd || m.bfd) res.push(R('BGP', 'BFD', n.bfd && m.bfd ? 'ok' : 'warn', n.bfd ? 'activé' : 'non', m.bfd ? 'activé' : 'non', n.bfd && m.bfd ? 'BFD des deux côtés.' : 'BFD d’un seul côté : pas de détection rapide de panne.'));
+    if (n.shutdown || m.shutdown) res.push(R('BGP', 'État', 'warn', n.shutdown ? 'désactivée' : 'active', m.shutdown ? 'désactivée' : 'active', 'La session est désactivée administrativement.'));
+    if (n.passive && m.passive) res.push(R('BGP', 'Ouverture TCP', 'err', 'passive', 'passive', 'Aucun côté n’initie la connexion.'));
+    if (n.vrf || m.vrf) res.push(R('BGP', 'Instance', 'info', n.vrf || 'globale', m.vrf || 'globale', 'Session dans une VRF.'));
+    return res;
+  }
+
+  Object.assign(V, { findSessions, FAM_LABEL, famL, checkSession });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Contrôles globaux : identifiants, doublons */
+(function (V) {
+  'use strict';
+  const { R, adapter, allAddr, name, netParse } = V;
+
+  /* ---------- Contrôles globaux ---------- */
+  function globalChecks(A, B) {
+    const res = [];
+    const nA = name(A), nB = name(B);
+    res.push(R('Global', 'Nom d’hôte', A.hostname && A.hostname === B.hostname ? 'warn' : (A.hostname && B.hostname ? 'ok' : 'info'), A.hostname || 'non trouvé', B.hostname || 'non trouvé',
+      A.hostname && A.hostname === B.hostname ? 'Même nom des deux côtés : avez-vous collé deux fois la même configuration ?' : (A.hostname && B.hostname ? '' : 'Nom d’hôte introuvable dans une des configurations.')));
+    const ids = d => adapter(d).routerIds(d);
+    const ridA = ids(A).global, ridB = ids(B).global;
+    const ospfR = d => ids(d).ospf;
+    const bgpR = d => ids(d).bgp;
+    if (ridA || ridB) res.push(R('Global', 'Router-ID', ridA && ridA === ridB ? 'err' : 'ok', ridA || 'non défini', ridB || 'non défini', ridA && ridA === ridB ? 'Router-ID identiques.' : ''));
+    if (A.ospf.ifs.size && B.ospf.ifs.size) {
+      const a = ospfR(A), b = ospfR(B);
+      res.push(R('Global', 'Router-ID OSPF', a && a === b ? 'err' : (a && b ? 'ok' : 'info'), a || 'automatique', b || 'automatique', a && a === b ? 'Router-ID OSPF identiques : adjacence impossible et LSA en conflit.' : (a && b ? 'Router-ID distincts.' : 'Router-ID choisi automatiquement : fixez-le pour éviter les surprises au redémarrage.')));
+    }
+    if (A.bgp.neighbors.length && B.bgp.neighbors.length) {
+      const a = bgpR(A), b = bgpR(B);
+      if (a || b) res.push(R('Global', 'Router-ID BGP', a && a === b ? 'err' : 'ok', a || 'automatique', b || 'automatique', a && a === b ? 'Router-ID BGP identiques : la session iBGP est refusée.' : 'Router-ID distincts.'));
+      res.push(R('Global', 'AS local', 'info', A.bgp.as || 'non défini', B.bgp.as || 'non défini', String(A.bgp.as) === String(B.bgp.as) ? 'Même AS : sessions iBGP.' : 'AS différents : sessions eBGP.'));
+    }
+    const sysA = A.isis.nets.map(netParse).filter(Boolean), sysB = B.isis.nets.map(netParse).filter(Boolean);
+    if (sysA.length || sysB.length) {
+      const dup = sysA.some(x => sysB.some(y => y.sys === x.sys));
+      res.push(R('Global', 'NET IS-IS', dup ? 'err' : (sysA.length && sysB.length ? 'ok' : 'warn'), A.isis.nets.join(', ') || 'absent', B.isis.nets.join(', ') || 'absent',
+        dup ? 'System-ID identiques : adjacence impossible.' : (sysA.length && sysB.length ? 'System-ID distincts.' : 'NET absent d’un côté : IS-IS ne démarrera pas.')));
+    }
+    const lsrA = ids(A).lsr, lsrB = ids(B).lsr;
+    if ((A.ldp.size || B.ldp.size) && (lsrA || lsrB)) res.push(R('Global', 'LSR-ID MPLS', lsrA && lsrA === lsrB ? 'err' : 'ok', lsrA || 'non défini', lsrB || 'non défini', lsrA && lsrA === lsrB ? 'LSR-ID identiques : session LDP impossible.' : 'LSR-ID distincts.'));
+    const ipsB = new Map(); for (const i of B.ifs.values()) for (const a of allAddr(i)) ipsB.set(a.ip, i.name);
+    const dups = [];
+    for (const i of A.ifs.values()) for (const a of allAddr(i)) if (ipsB.has(a.ip)) dups.push(`${a.ip} (${i.name} / ${ipsB.get(a.ip)})`);
+    res.push(R('Global', 'Adresses en double', dups.length ? 'err' : 'ok', dups.length ? dups.length + ' conflit(s)' : 'aucune', dups.length ? dups.length + ' conflit(s)' : 'aucune', dups.length ? 'Adresses présentes des deux côtés : ' + dups.join(', ') + '.' : 'Aucune adresse IP n’est utilisée deux fois.'));
+    if (A.lldp.enabled !== B.lldp.enabled) res.push(R('Global', 'LLDP', 'info', A.lldp.enabled ? 'activé' + (adapter(A).lldpDefault ? ' (défaut)' : '') : 'désactivé', B.lldp.enabled ? 'activé' + (adapter(B).lldpDefault ? ' (défaut)' : '') : 'désactivé', 'LLDP n’est actif que d’un côté : pas de vue des voisins pour le dépannage.'));
+    return res;
+  }
+
+  Object.assign(V, { globalChecks });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : Point d’entrée de l’analyse et résumés pour l’interface */
+(function (V) {
+  'use strict';
+  const { R, allAddr, checkLink, checkSession, cidr, findLinks, findSessions, globalChecks, ipMtu, isisOf, l3Ifs, mplsOf, name, natSort, ospfOf, parse, phys, sameNet, suggestPairs } = V;
+
+  /* ---------- Analyse ---------- */
+  function analyze(textA, textB, vendorA, vendorB, manual) {
+    const A = parse(textA, vendorA), B = parse(textB, vendorB);
+    if (!A || !B) return { error: !A && !B ? 'both' : (!A ? 'A' : 'B'), A, B };
+    const links = findLinks(A, B);
+    const sugg = suggestPairs(A, B, links);
+    const lift = (D, i, other) => {
+      if (!i || !other || allAddr(i).length || !allAddr(other).length) return i;
+      const u = [...D.ifs.values()].find(x => x.parent === i.name && allAddr(x).some(a => allAddr(other).some(b => a.fam === b.fam && sameNet(a, b, Math.min(a.len, b.len)))));
+      return u || i;
+    };
+    const man = (manual || []).map(p => {
+      const a = A.ifs.get(p[0]), b = B.ifs.get(p[1]);
+      return { a: lift(A, a, b), b: lift(B, b, a), how: 'manuel' };
+    }).filter(p => p.a && p.b && !links.some(l => l.a === p.a && l.b === p.b));
+    const all = [...links, ...sugg, ...man].map(l => ({ a: l.a, b: l.b, how: l.how, checks: checkLink(A, l.a, B, l.b) }));
+    const sessions = findSessions(A, B).map(s => ({ a: s.a, b: s.b, checks: checkSession(A, B, s) }));
+    const glob = globalChecks(A, B);
+    for (const d of [A, B]) for (const nt of d.notes) glob.push(R('Lecture', 'Configuration ' + name(d), nt.sev, d === A ? nt.msg : '', d === B ? nt.msg : '', nt.msg));
+    return { A, B, links: all, sessions, global: glob };
+  }
+
+  /* ---------- Résumé d'un équipement ---------- */
+  function summary(dev) {
+    const physC = [...dev.ifs.values()].filter(i => i.kind === 'phys').length;
+    const l3 = l3Ifs(dev).length;
+    const protos = [];
+    if (dev.ospf.ifs.size) protos.push('OSPF');
+    if (dev.ospf3.ifs.size) protos.push('OSPFv3');
+    if (dev.isis.enabled) protos.push('IS-IS');
+    if (dev.ldp.size) protos.push('LDP');
+    if (dev.rsvp.size) protos.push('RSVP');
+    if (dev.bgp.neighbors.length) protos.push('BGP (' + dev.bgp.neighbors.length + ' voisins)');
+    return { physC, l3, protos };
+  }
+  function ifTable(dev) {
+    return [...dev.ifs.values()].filter(i => i.kind !== 'phys' || allAddr(i).length || i.desc || i.lag || i.linkType || i.l2)
+      .sort((a, b) => natSort(a.name, b.name)).map(i => {
+        const o = ospfOf(dev, i), s = isisOf(dev, i), m = mplsOf(dev, i);
+        return { name: i.name, desc: i.desc, ip: allAddr(i).map(cidr).join(', '), mtu: allAddr(i).length ? ipMtu(dev, i).v : '', vlan: i.vlanId ?? (i.kind === 'vlanif' ? i.name.replace(/\D+/g, '') : ''),
+          lag: i.lag || (i.kind === 'lag' ? (i.lacpMode || '') : ''), ospf: o ? o.area + (o.passive ? ' (passive)' : '') : '', isis: s ? [...s.levels].map(l => 'L' + l).join('+') : '', ldp: m.ldp ? 'oui' : '', off: i.disabled };
+      });
+  }
+  function pairable(dev) {
+    return [...dev.ifs.values()].filter(i => i.kind === 'phys' || i.kind === 'lag' || allAddr(i).length).map(i => i.name).sort(natSort);
+  }
+
+  Object.assign(V, { analyze, summary, ifTable, pairable });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : configurations d’exemple (fichier généré par tools/build.js, ne pas modifier à la main) */
+(function (V) {
+  V.samples = {
+    "a": "## Last commit: 2026-10-28 09:12:44 CET by netops\nversion 17.4R3;\nsystem {\n    host-name MX104-PAR1;\n}\nchassis {\n    aggregated-devices {\n        ethernet {\n            device-count 4;\n        }\n    }\n}\ninterfaces {\n    ge-1/0/0 {\n        description \"Vers HPE5520-PAR1 XGE1/0/49\";\n        vlan-tagging;\n        mtu 9192;\n        unit 100 {\n            description \"Transit coeur\";\n            vlan-id 100;\n            family inet {\n                address 10.10.0.1/30;\n            }\n            family iso;\n            family mpls;\n        }\n    }\n    ge-1/0/1 {\n        description \"Vers HPE5520-PAR1 GE1/0/1 - clients\";\n        speed 1g;\n        link-mode full-duplex;\n        unit 0 {\n            family bridge {\n                interface-mode access;\n                vlan-id 300;\n            }\n        }\n    }\n    ge-1/0/2 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ge-1/0/3 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ae0 {\n        description \"Bundle vers HPE5520-PAR1 RAGG1\";\n        aggregated-ether-options {\n            lacp {\n                active;\n                periodic fast;\n            }\n        }\n        unit 0 {\n            family inet {\n                address 10.10.1.1/31;\n            }\n        }\n    }\n    lo0 {\n        unit 0 {\n            family inet {\n                address 192.0.2.1/32;\n            }\n            family iso {\n                address 49.0001.1920.0000.2001.00;\n            }\n        }\n    }\n}\nrouting-options {\n    router-id 192.0.2.1;\n    autonomous-system 65001;\n}\nprotocols {\n    ospf {\n        area 0.0.0.0 {\n            interface ge-1/0/0.100 {\n                interface-type p2p;\n                authentication {\n                    md5 1 key \"$9$lrfMx-wYgJZjbsaUDi5TB1RSKW8XNY2o\"; ## SECRET-DATA\n                }\n                bfd-liveness-detection {\n                    minimum-interval 300;\n                    multiplier 3;\n                }\n            }\n            interface ae0.0;\n            interface lo0.0 {\n                passive;\n            }\n        }\n    }\n    isis {\n        level 1 disable;\n        interface ge-1/0/0.100 {\n            point-to-point;\n        }\n        interface lo0.0 {\n            passive;\n        }\n    }\n    mpls {\n        interface ge-1/0/0.100;\n    }\n    ldp {\n        interface ge-1/0/0.100;\n    }\n    bgp {\n        group EBGP-HPE {\n            type external;\n            local-address 192.0.2.1;\n            multihop {\n                ttl 2;\n            }\n            family inet {\n                unicast;\n            }\n            family inet-vpn {\n                unicast;\n            }\n            authentication-key \"$9$.f5zAtOBRSHkn9ApREgoJUk.mfTF69f5\"; ## SECRET-DATA\n            peer-as 65002;\n            neighbor 192.0.2.2 {\n                description HPE5520-PAR1;\n            }\n        }\n    }\n    lldp {\n        interface all;\n    }\n}\n",
+    "b": "#\n version 7.1.070, Release 6635P07\n#\n sysname HPE5520-PAR1\n#\n router id 192.0.2.2\n#\n lldp global enable\n#\nospf 1 router-id 192.0.2.2\n silent-interface LoopBack0\n area 0.0.0.0\n  network 192.0.2.2 0.0.0.0\n area 0.0.0.1\n  network 10.10.1.0 0.0.0.1\n#\nisis 1\n is-level level-2\n network-entity 49.0001.1920.0000.2002.00\n#\nvlan 1\n#\nvlan 100\n name TRANSIT-MX\n#\nvlan 200\n#\nvlan 30\n name CLIENTS\n#\nmpls lsr-id 192.0.2.2\n#\nmpls ldp\n#\ninterface Route-Aggregation1\n description Bundle vers MX104-PAR1 ae0\n ip address 10.10.1.0 255.255.255.254\n link-aggregation mode dynamic\n#\ninterface LoopBack0\n ip address 192.0.2.2 255.255.255.255\n isis enable 1\n#\ninterface Vlan-interface100\n description Transit coeur vers MX104-PAR1\n ip address 10.10.0.2 255.255.255.252\n ospf timer hello 5\n ospf network-type p2p\n ospf authentication-mode md5 1 cipher $c$3$Hk2nY0dpQ8wVw1Rr9yFtR1K5Wq6Xj7==\n ospf 1 area 0.0.0.0\n ospf bfd enable\n isis enable 1\n isis circuit-type p2p\n isis circuit-level level-2\n mpls enable\n#\ninterface GigabitEthernet1/0/1\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/1\n port access vlan 30\n duplex half\n#\ninterface Ten-GigabitEthernet1/0/49\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/0\n port link-type trunk\n port trunk permit vlan 1 100 200\n#\ninterface Ten-GigabitEthernet1/0/51\n port link-mode route\n port link-aggregation group 1\n#\ninterface Ten-GigabitEthernet1/0/52\n port link-mode route\n port link-aggregation group 1\n#\nbgp 65002\n router-id 192.0.2.2\n peer 192.0.2.1 as-number 65010\n peer 192.0.2.1 connect-interface LoopBack0\n peer 192.0.2.1 password cipher $c$3$Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MA==\n peer 10.10.1.1 as-number 65001\n #\n address-family ipv4 unicast\n  peer 192.0.2.1 enable\n  peer 10.10.1.1 enable\n#\nreturn\n"
+  };
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : interface utilisateur */
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ICON = {
+    ok:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.3 3 3 6-6.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warn:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v5.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.4" r="1.4" fill="currentColor"/></svg>',
+    err:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.3 4.3 7.4 7.4m0-7.4-7.4 7.4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    info:'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="4" r="1.4" fill="currentColor"/><path d="M8 7v5.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
+  };
+  const SEV_TXT = {ok:'conforme', warn:'à vérifier', err:'bloquant', info:'information'};
+  const RANK = {err:3, warn:2, info:1, ok:0};
+  const state = { manual: [], filter: 'all', last: null };
+
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+  /* Liste des constructeurs, alimentée par le registre */
+  for(const s of ['A','B']){
+    $('ven'+s).innerHTML='<option value="auto">Détection automatique</option>'+VAV.vendors.map(v=>`<option value="${esc(v.id)}">${esc(v.label)} (${esc(v.models)})</option>`).join('');
+  }
+  const placeholder='Collez ici la sortie de :\n'+VAV.vendors.map(v=>v.label+' : '+v.exportCommand).join('\n');
+  $('cfgA').placeholder=placeholder; $('cfgB').placeholder=placeholder;
+
+  /* Détection en direct */
+  function describe(side){
+    const txt=$('cfg'+side).value, ven=$('ven'+side).value, el=$('det'+side);
+    el.classList.remove('bad');
+    if(!txt.trim()){ el.textContent='Collez une configuration ou ouvrez un fichier.'; return; }
+    let d=null; try{ d=VAV.parse(txt, ven); }catch(e){ d=null; }
+    if(!d){ el.classList.add('bad'); el.textContent='Format non reconnu : choisissez le constructeur dans la liste.'; return; }
+    const s=VAV.summary(d);
+    const v=VAV.adapter(d).formatLabel(d);
+    el.innerHTML=`<strong>${esc(d.hostname||'Nom d’hôte introuvable')}</strong>, ${esc(v)} : ${s.physC} port(s), ${s.l3} interface(s) IP${s.protos.length?', '+esc(s.protos.join(', ')):''}.`;
+  }
+  let deb={};
+  for(const s of ['A','B']){
+    $('cfg'+s).addEventListener('input',()=>{ clearTimeout(deb[s]); deb[s]=setTimeout(()=>describe(s),250); });
+    $('ven'+s).addEventListener('change',()=>describe(s));
+    $('file'+s).addEventListener('change',e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{ $('cfg'+s).value=r.result; describe(s); toast('Fichier « '+f.name+' » chargé.'); }; r.readAsText(f);
+      e.target.value='';
+    });
+  }
+  $('demo').onclick=()=>{ $('cfgA').value=VAV.samples.a; $('cfgB').value=VAV.samples.b; $('venA').value='auto'; $('venB').value='auto'; state.manual=[]; describe('A'); describe('B'); run(); };
+  $('clear').onclick=()=>{ for(const s of ['A','B']){ $('cfg'+s).value=''; $('ven'+s).value='auto'; describe(s);} state.manual=[]; $('report').hidden=true; $('report').innerHTML=''; };
+  $('swap').onclick=()=>{ const a=$('cfgA').value, va=$('venA').value; $('cfgA').value=$('cfgB').value; $('venA').value=$('venB').value; $('cfgB').value=a; $('venB').value=va; state.manual=state.manual.map(p=>[p[1],p[0]]); describe('A'); describe('B'); if(!$('report').hidden) run(); };
+  $('run').onclick=()=>run(true);
+  document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); run(true); } });
+
+  function worst(checks){ return checks.reduce((w,c)=>RANK[c.sev]>RANK[w]?c.sev:w,'ok'); }
+  function counts(checks){ const c={err:0,warn:0,ok:0,info:0}; checks.forEach(x=>c[x.sev]++); return c; }
+
+  function rowHtml(c){
+    return `<div class="row ${c.sev}" data-sev="${c.sev}">
+      <div class="va">${esc(c.a)}</div>
+      <div class="mid"><span class="lbl">${esc(c.label)}</span><span class="wire"><span class="node" title="${SEV_TXT[c.sev]}">${ICON[c.sev]}<span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">${SEV_TXT[c.sev]}</span></span></span></div>
+      <div class="vb">${esc(c.b)}</div>
+      <p class="msg">${esc(c.msg)}</p>
+    </div>`;
+  }
+  function rowsByCat(checks){
+    let html='', cat=null;
+    for(const c of checks){ if(c.cat!==cat){ cat=c.cat; html+=`<div class="cat">${esc(cat)}</div>`; } html+=rowHtml(c); }
+    return html;
+  }
+  const HOW = { auto:'Lien trouvé automatiquement : adresses dans le même sous-réseau.', description:'Lien déduit des descriptions d’interfaces (chaque côté cite l’autre).', 'manuel':'Paire ajoutée à la main.' };
+
+  function run(scroll){
+    const A=$('cfgA').value, B=$('cfgB').value;
+    if(!A.trim()||!B.trim()){ toast('Collez une configuration de chaque côté.'); (A.trim()?$('cfgB'):$('cfgA')).focus(); return; }
+    let r;
+    try{ r=VAV.analyze(A,B,$('venA').value,$('venB').value,state.manual); }
+    catch(e){ console.error(e); toast('Erreur de lecture : '+e.message); return; }
+    if(r.error){ toast(r.error==='both'?'Aucun des deux formats n’est reconnu.':'Format du côté '+r.error+' non reconnu : choisissez le constructeur.'); return; }
+    state.last=r; render(r);
+    if(scroll) $('report').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'start'});
+  }
+
+  function render(r){
+    const nA=r.A.hostname||'Côté A', nB=r.B.hostname||'Côté B';
+    const all=[...r.links.flatMap(l=>l.checks), ...r.sessions.flatMap(s=>s.checks), ...r.global];
+    const c=counts(all);
+    const title = c.err ? `${c.err} problème${c.err>1?'s':''} bloquant${c.err>1?'s':''}${c.warn?`, ${c.warn} point${c.warn>1?'s':''} à vérifier`:''}`
+      : c.warn ? `Rien de bloquant, ${c.warn} point${c.warn>1?'s':''} à vérifier` : 'Les deux configurations concordent';
+    const devHead = `<div class="devnames"><span>${esc(nA)}</span><span></span><span>${esc(nB)}</span></div>`;
+    let idx='', blocks='';
+    let n=0;
+    const addBlock=(group, titleHtml, plain, meta, checks, isLink)=>{
+      const id='b'+(++n); const w=worst(checks); const cc=counts(checks);
+      const bad=cc.err+cc.warn;
+      idx+=`${group}<a href="#${id}"><span class="dot ${w}"></span><span class="t">${esc(plain)}</span><span class="n">${bad?bad+' à voir':'OK'}</span></a>`;
+      blocks+=`<section class="block" id="${id}"><header class="bhead ${w}">${titleHtml}${meta?`<p class="bmeta">${esc(meta)}</p>`:''}</header>${devHead}${rowsByCat(checks)}<p class="empty" hidden>Rien à signaler avec ce filtre.</p></section>`;
+    };
+    const linkTitle=(a,b)=>`<h3><span class="ea">${esc(a)}</span><span class="wire"></span><span class="eb">${esc(b)}</span></h3>`;
+    if(r.links.length){
+      r.links.forEach((l,i)=>addBlock(i===0?'<h3>Liens</h3>':'', linkTitle(l.a.name,l.b.name), `${l.a.name} ↔ ${l.b.name}`, HOW[l.how]||'', l.checks, true));
+    } else {
+      idx+='<h3>Liens</h3><p style="margin:0;color:var(--muted);font-size:.88rem">Aucun lien trouvé.</p>';
+    }
+    if(r.sessions.length){
+      r.sessions.forEach((s,i)=>{
+        const a=s.a?s.a.ip:'non déclarée', b=s.b?s.b.ip:'non déclarée';
+        addBlock(i===0?'<h3>Sessions BGP</h3>':'', `<h3><span class="ea">neighbor ${esc(a)}</span><span class="wire"></span><span class="eb">peer ${esc(b)}</span></h3>`, `BGP ${s.a?s.a.ip:'?'} / ${s.b?s.b.ip:'?'}`, s.a&&s.a.group?'Groupe Junos : '+s.a.group:'', s.checks);
+      });
+    }
+    addBlock('<h3>Équipements</h3>', `<p class="title">Contrôles globaux</p>`, 'Identifiants et doublons', '', r.global);
+
+    const noLinkMsg = r.links.length ? '' : `<section class="block"><p class="empty" style="color:var(--ink)">Aucun lien n’a été trouvé automatiquement : aucune adresse IP des deux équipements ne partage un sous-réseau, et aucune description ne cite l’autre équipement. Pour un lien de niveau 2 ou une interface sans IP, désignez la paire ci-dessous.</p></section>`;
+    const optsA=VAV.pairable(r.A).map(x=>`<option>${esc(x)}</option>`).join(''), optsB=VAV.pairable(r.B).map(x=>`<option>${esc(x)}</option>`).join('');
+    const manual=`<section class="block manual-block" id="manual"><header class="bhead"><p class="title">Comparer une autre paire d’interfaces</p></header>
+      <p class="intro">Utile pour un trunk, un port d’accès ou un agrégat de niveau 2 que l’outil ne peut pas relier par l’adressage IP.</p>
+      <div class="manual"><label>Interface sur ${esc(nA)}<select id="mA">${optsA}</select></label><span class="x">↔</span><label>Interface sur ${esc(nB)}<select id="mB">${optsB}</select></label><button class="btn primary" id="mAdd" type="button">Comparer cette paire</button></div>
+      ${state.manual.length?`<p class="intro" style="padding-bottom:16px">Paires ajoutées : ${state.manual.map((p,i)=>`<code>${esc(p[0])} ↔ ${esc(p[1])}</code> <button class="ghost" data-del="${i}" type="button">Retirer</button>`).join(' ')}</p>`:''}
+    </section>`;
+    const raw=`<section class="block"><details class="raw"><summary>Ce que l’outil a compris de chaque configuration</summary>${rawTable(r.A)}${rawTable(r.B)}</details></section>`;
+
+    $('report').innerHTML=`
+      <div class="verdict">
+        <div><h2>${esc(title)}</h2>
+          <p class="tally"><span><span class="dot err"></span><b>${c.err}</b> bloquant${c.err>1?'s':''}</span><span><span class="dot warn"></span><b>${c.warn}</b> à vérifier</span><span><span class="dot"></span><b>${c.ok}</b> conforme${c.ok>1?'s':''}</span><span><span class="dot info"></span><b>${c.info}</b> information${c.info>1?'s':''}</span><span>${r.links.length} lien${r.links.length>1?'s':''}, ${r.sessions.length} session${r.sessions.length>1?'s':''} BGP</span></p>
+        </div>
+        <div class="tools">
+          <div class="seg" role="group" aria-label="Filtrer les contrôles">
+            <button type="button" data-f="all" aria-pressed="${state.filter==='all'}">Tout</button>
+            <button type="button" data-f="issues" aria-pressed="${state.filter==='issues'}">Problèmes</button>
+            <button type="button" data-f="err" aria-pressed="${state.filter==='err'}">Bloquants</button>
+          </div>
+          <button class="btn" id="copy" type="button">Copier le rapport</button>
+        </div>
+      </div>
+      <div class="layout"><nav class="index" aria-label="Sommaire du rapport">${idx}<h3>Outils</h3><a href="#manual"><span class="t" style="font-family:var(--font);font-size:.9rem">Comparer une autre paire</span></a></nav>
+      <div id="blocks">${noLinkMsg}${blocks}${manual}${raw}</div></div>`;
+    $('report').hidden=false;
+    applyFilter();
+    $('report').querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.filter=b.dataset.f; $('report').querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b)); applyFilter(); });
+    $('copy').onclick=()=>copyReport(r);
+    $('mAdd').onclick=()=>{ const p=[$('mA').value,$('mB').value]; if(!state.manual.some(x=>x[0]===p[0]&&x[1]===p[1])) state.manual.push(p); run(false); setTimeout(()=>{ const blocksEls=[...document.querySelectorAll('#blocks .block')]; const t=blocksEls.find(b=>b.querySelector('.ea')&&b.querySelector('.ea').textContent===p[0]&&b.querySelector('.eb').textContent===p[1]); if(t) t.scrollIntoView({block:'start'}); else { const any=blocksEls.find(b=>b.querySelector('.ea')&&b.querySelector('.ea').textContent.startsWith(p[0])&&b.querySelector('.eb').textContent.startsWith(p[1])); if(any) any.scrollIntoView({block:'start'}); toast(any?'Paire comparée.':'Cette paire est déjà analysée plus haut.'); } },0); };
+    $('report').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ state.manual.splice(+b.dataset.del,1); run(false); });
+  }
+
+  function applyFilter(){
+    const box=$('blocks'); if(!box) return;
+    box.classList.toggle('filtered', state.filter!=='all');
+    box.classList.toggle('filtered-err', state.filter==='err');
+    box.querySelectorAll('.block').forEach(bl=>{
+      const rows=[...bl.querySelectorAll('.row')]; if(!rows.length) return;
+      const vis=r=> state.filter==='all' || r.dataset.sev==='err' || (state.filter==='issues' && r.dataset.sev==='warn');
+      bl.querySelectorAll('.cat').forEach(cat=>{
+        let el=cat.nextElementSibling, any=false;
+        while(el && el.classList.contains('row')){ if(vis(el)) any=true; el=el.nextElementSibling; }
+        cat.classList.toggle('allhidden', !any);
+      });
+      const e=bl.querySelector('.empty'); if(e) e.hidden = rows.some(vis);
+    });
+  }
+
+  function rawTable(d){
+    const rows=VAV.ifTable(d);
+    const nb=d.bgp.neighbors.map(n=>`<tr><td>${esc(n.ip)}</td><td>${esc(n.peerAs||'?')}</td><td>${esc(n.group||'')}</td><td>${esc(n.localAddress||n.connectIf||'')}</td><td>${esc(n.families&&n.families.size?[...n.families].join(', '):'défaut')}</td><td>${n.multihop?'oui':''}</td><td>${n.auth?'oui':''}</td><td>${esc(n.vrf||'')}</td></tr>`).join('');
+    return `<div class="tablewrap"><h4 style="font-family:var(--cond);font-size:1.1rem;margin:8px 0">${esc(d.hostname||'?')} <span style="color:var(--muted);font-weight:500">(${esc(VAV.adapter(d).label)})</span></h4>
+    <table><thead><tr><th>Interface</th><th>Description</th><th>Adresses</th><th>MTU IP</th><th>VLAN</th><th>Agrégat</th><th>OSPF</th><th>IS-IS</th><th>LDP</th></tr></thead><tbody>
+    ${rows.map(x=>`<tr><td class="${x.off?'off':''}">${esc(x.name)}</td><td>${esc(x.desc)}</td><td>${esc(x.ip)}</td><td>${esc(x.mtu)}</td><td>${esc(x.vlan)}</td><td>${esc(x.lag)}</td><td>${esc(x.ospf)}</td><td>${esc(x.isis)}</td><td>${esc(x.ldp)}</td></tr>`).join('')}
+    </tbody></table>
+    ${nb?`<table style="margin-top:14px"><thead><tr><th>Voisin BGP</th><th>AS distant</th><th>Groupe</th><th>Source</th><th>Familles</th><th>Multihop</th><th>Auth</th><th>VRF</th></tr></thead><tbody>${nb}</tbody></table>`:''}</div>`;
+  }
+
+  function copyReport(r){
+    const nA=r.A.hostname||'A', nB=r.B.hostname||'B';
+    const tag={ok:'[OK]  ',warn:'[A VOIR]',err:'[ERREUR]',info:'[INFO]'};
+    const keep=c=> state.filter==='all' || c.sev==='err' || (state.filter==='issues'&&c.sev==='warn');
+    const L=[`Rapport Vis-à-vis : ${nA} (A) / ${nB} (B)`, `Généré le ${new Date().toLocaleString('fr-FR')}`, ''];
+    const sec=(t,checks)=>{ const cs=checks.filter(keep); if(!cs.length) return; L.push('== '+t); cs.forEach(c=>{ L.push(`${tag[c.sev]} ${c.cat} / ${c.label}`); L.push(`    A : ${c.a}`); L.push(`    B : ${c.b}`); if(c.msg) L.push(`    ${c.msg}`); }); L.push(''); };
+    r.links.forEach(l=>sec(`Lien ${l.a.name} <-> ${l.b.name}`, l.checks));
+    r.sessions.forEach(s=>sec(`Session BGP ${s.a?s.a.ip:'-'} / ${s.b?s.b.ip:'-'}`, s.checks));
+    sec('Contrôles globaux', r.global);
+    const text=L.join('\n');
+    const fallback=()=>{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} ta.remove(); toast(ok?'Rapport copié.':'Copie impossible ici : sélectionnez le texte à la main.'); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>toast('Rapport copié.'), fallback); else fallback();
+  }
+})();
+</script>
+</body>
+</html>
