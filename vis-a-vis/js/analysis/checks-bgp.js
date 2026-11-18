@@ -1,7 +1,7 @@
 /* Vis-à-vis : Contrôles des sessions BGP */
 (function (V) {
   'use strict';
-  const { R, adapter, cmpSecret, connectedIf, fmtSecret, name, ownerOf, sourceIp } = V;
+  const { mentions, ospfOf, isisOf, R, adapter, cmpSecret, connectedIf, fmtSecret, name, ownerOf, sourceIp } = V;
 
   /* ---------- BGP ---------- */
   function findSessions(A, B) {
@@ -17,6 +17,29 @@
       if (!ownerOf(A, m.ip) || S.some(s => s.b === m)) continue;
       S.push({ a: null, b: m });
     }
+    // Sessions orphelines : l'adresse visée n'existe plus en face (IP modifiée, faute de frappe).
+    // On cherche le voisin qui vise manifestement cet équipement (description, AS, adresse source, sous-réseau).
+    const score = (X, Y, x, y) => {
+      let s = 0;
+      if (mentions(x.desc, Y.hostname, X.hostname)) s += 2;
+      if (sourceIp(Y, y).ip && sourceIp(Y, y).ip === x.ip) s += 1;
+      if (sourceIp(X, x).ip && sourceIp(X, x).ip === y.ip) s += 2;
+      if (String(X.bgp.as) !== String(Y.bgp.as) && x.peerAs && String(x.peerAs) === String(y.localAs || Y.bgp.as)) s += 1;
+      if (connectedIf(Y, x.ip)) s += 1;
+      return s;
+    };
+    for (const s of S) {
+      if (s.a && s.b) continue;
+      if (!s.a) {
+        const pool = A.bgp.neighbors.filter(n => !S.some(t => t.a === n) && !ownerOf(B, n.ip) && !ownerOf(A, n.ip));
+        const best = pool.map(n => [n, score(A, B, n, s.b)]).filter(e => e[1] >= 2).sort((x, y) => y[1] - x[1])[0];
+        if (best) s.a = best[0];
+      } else {
+        const pool = B.bgp.neighbors.filter(m => !S.some(t => t.b === m) && !ownerOf(A, m.ip) && !ownerOf(B, m.ip));
+        const best = pool.map(m => [m, score(B, A, m, s.a)]).filter(e => e[1] >= 2).sort((x, y) => y[1] - x[1])[0];
+        if (best) s.b = best[0];
+      }
+    }
     return S;
   }
   const FAM_LABEL = { 'ipv4-unicast': 'IPv4 unicast', 'ipv6-unicast': 'IPv6 unicast', vpnv4: 'VPNv4', vpnv6: 'VPNv6', evpn: 'EVPN', l2vpn: 'L2VPN', 'ipv4-labeled': 'IPv4 labeled', 'ipv6-labeled': 'IPv6 labeled (6PE)', flowspec: 'Flowspec', rtc: 'Route-target', 'ipv4-multicast': 'IPv4 multicast' };
@@ -29,6 +52,9 @@
       return res;
     }
     res.push(R('BGP', 'Réciprocité', 'ok', 'neighbor ' + n.ip, 'peer ' + m.ip, 'Session déclarée des deux côtés.'));
+    const ghostA = !ownerOf(B, n.ip), ghostB = !ownerOf(A, m.ip);
+    if (ghostA || ghostB) res.push(R('BGP', 'Adresse du voisin', 'err', ghostA ? `${n.ip} absente de ${name(B)}` : n.ip, ghostB ? `${m.ip} absente de ${name(A)}` : m.ip,
+      [ghostA ? `${name(A)} vise ${n.ip}, mais aucune interface de ${name(B)} ne porte cette adresse` : '', ghostB ? `${name(B)} vise ${m.ip}, mais aucune interface de ${name(A)} ne porte cette adresse` : ''].filter(Boolean).join(' ; ') + '. La session ne peut pas s’établir.'));
     const sa = sourceIp(A, n), sb = sourceIp(B, m);
     const addrProbs = [];
     if (sa.ip && sa.ip !== m.ip) addrProbs.push(`${name(A)} source depuis ${sa.ip} (${sa.how}), mais ${name(B)} attend ${m.ip}`);
@@ -36,6 +62,15 @@
     if (!sa.ip && !connectedIf(A, n.ip)) addrProbs.push(`${name(A)} : définissez « local-address » pour une session entre loopbacks`);
     if (!sb.ip && !connectedIf(B, m.ip)) addrProbs.push(`${name(B)} : définissez « peer ${m.ip} connect-interface » pour une session entre loopbacks`);
     res.push(R('BGP', 'Adresses de session', addrProbs.length ? 'err' : 'ok', `${sa.ip || '?'} → ${n.ip}`, `${sb.ip || '?'} → ${m.ip}`, addrProbs.length ? addrProbs.join(' ; ') + '. La connexion TCP sera refusée.' : 'Chaque côté source depuis l’adresse attendue par l’autre.'));
+    // Session entre loopbacks : chaque loopback doit être annoncée dans l'IGP, sinon l'autre côté ne la joint pas
+    const igpProbs = [];
+    for (const [D, src] of [[A, sa], [B, sb]]) {
+      const own = src.ip && ownerOf(D, src.ip);
+      const hasIgp = D.ospf.ifs.size || D.isis.enabled;
+      if (own && (own.loopback || own.kind === 'loopback') && hasIgp && !ospfOf(D, own) && !isisOf(D, own))
+        igpProbs.push(`${name(D)} : la loopback ${own.name} (${src.ip}) n’est annoncée ni en OSPF ni en IS-IS`);
+    }
+    if (igpProbs.length) res.push(R('BGP', 'Joignabilité des loopbacks', 'err', sa.ip || '?', sb.ip || '?', igpProbs.join(' ; ') + ' : le voisin ne pourra pas joindre cette adresse, la session ne montera pas.'));
     const lasA = n.localAs || A.bgp.as, lasB = m.localAs || B.bgp.as;
     const pA = n.peerAs, pB = m.peerAs;
     const asOk1 = pA && String(pA) === String(lasB), asOk2 = pB && String(pB) === String(lasA);

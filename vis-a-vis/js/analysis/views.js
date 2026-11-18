@@ -9,6 +9,8 @@
   const mplsOf = (dev, i) => adapter(dev).mplsOf(dev, i);
   const l2Profile = (dev, p) => p ? adapter(dev).l2Profile(dev, p) : null;
   const encapOf = (dev, i) => adapter(dev).encapOf(dev, i);
+  const cosOf = (dev, i) => (adapter(dev).cosOf ? adapter(dev).cosOf(dev, i) : null);
+  const lldpOn = (dev, p) => (adapter(dev).lldpOn ? adapter(dev).lldpOn(dev, p) : null);
   function ospfOf(dev, i, which) {
     const O = dev[which || 'ospf'];
     let c = O.ifs.get(i.name);
@@ -71,5 +73,5 @@
     return { ip: null, how: 'adresse de l’interface de sortie (non déterminable)' };
   }
 
-  Object.assign(V, { ipMtu, isisOf, mplsOf, l2Profile, encapOf, ospfOf, lagOf, members, carriers, netParse, ownerOf, connectedIf, sourceIp });
+  Object.assign(V, { cosOf, lldpOn, ipMtu, isisOf, mplsOf, l2Profile, encapOf, ospfOf, lagOf, members, carriers, netParse, ownerOf, connectedIf, sourceIp });
 })(globalThis.VAV = globalThis.VAV || {});

@@ -1,6 +1,6 @@
 {
   "name": "vis-a-vis",
-  "version": "1.0.0",
+  "version": "1.5.1",
   "description": "Comparateur de configurations de routeurs voisins (Juniper Junos, HPE Comware 7) : vérifie que les deux côtés d’un lien sont cohérents.",
   "private": true,
   "license": "MIT",

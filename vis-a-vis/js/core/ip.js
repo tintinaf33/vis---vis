@@ -32,13 +32,28 @@
   }
   function net6(b, l) { const all = (1n << 128n) - 1n; const mask = l <= 0 ? 0n : (all ^ ((1n << BigInt(128 - l)) - 1n)); return b & mask; }
   function sameNet(x, y, l) { return x.fam === 4 ? net4(x.n, l) === net4(y.n, l) : net6(x.n, l) === net6(y.n, l); }
+  // Ajoute une adresse « ip/longueur » ; une adresse mal formée n'est jamais ignorée en silence :
+  // elle est conservée dans i.badAddr pour être signalée.
   function addAddr(i, cidr, extra) {
-    if (!cidr) return;
-    const [ip, l] = cidr.split('/');
-    if (ip.includes(':')) { const b = v6big(ip); if (b !== null) i.v6.push(Object.assign({ fam: 6, ip, len: l ? +l : 128, n: b }, extra || {})); }
-    else { const n = v4int(ip); if (n !== null) i.v4.push(Object.assign({ fam: 4, ip, len: l ? +l : 32, n }, extra || {})); }
+    if (!cidr) return false;
+    const parts = String(cidr).split('/');
+    const ip = parts[0], l = parts[1];
+    const okLen = (max) => l === undefined || (/^\d{1,3}$/.test(l) && +l <= max);
+    if (parts.length <= 2 && ip.includes(':')) {
+      const b = v6big(ip);
+      if (b !== null && okLen(128)) { i.v6.push(Object.assign({ fam: 6, ip, len: l ? +l : 128, n: b }, extra || {})); return true; }
+    } else if (parts.length <= 2) {
+      const n = v4int(ip);
+      if (n !== null && okLen(32)) { i.v4.push(Object.assign({ fam: 4, ip, len: l ? +l : 32, n }, extra || {})); return true; }
+    }
+    (i.badAddr = i.badAddr || []).push(String(cidr));
+    return false;
   }
+  // Masque décimal valide (bits à 1 contigus)
+  function validMask(m) { const n = v4int(m); if (n === null) return false; const l = maskLen(m); return ((lenMask(l) >>> 0) === (n >>> 0)); }
+  const isIPv4 = s => v4int(s) !== null;
+  const isIP = s => v4int(s) !== null || v6big(s) !== null;
   const cidr = a => a.ip + '/' + a.len;
 
-  Object.assign(V, { v4int, v4str, maskLen, lenMask, net4, v6big, net6, sameNet, addAddr, cidr });
+  Object.assign(V, { validMask, isIPv4, isIP, v4int, v4str, maskLen, lenMask, net4, v6big, net6, sameNet, addAddr, cidr });
 })(globalThis.VAV = globalThis.VAV || {});

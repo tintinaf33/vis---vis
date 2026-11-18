@@ -1,13 +1,14 @@
 /* Vis-à-vis : Contrôles par lien : adressage, MTU, VLAN, LACP, OSPF, IS-IS, MPLS */
 (function (V) {
   'use strict';
-  const { R, adapter, allAddr, carriers, cidr, cmpSecret, encapOf, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, l3Ifs, lagOf, lenMask, members, mplsOf, name, net4, netParse, ospfOf, phys, sameNet, v4str } = V;
+  const { l3Cfg, R, mentions, isMgmt, globMatch, cosOf, lldpOn, adapter, allAddr, carriers, cidr, cmpSecret, encapOf, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, l3Ifs, lagOf, lenMask, members, mplsOf, name, net4, netParse, ospfOf, phys, sameNet, v4str } = V;
 
   /* ---------- Résultats ---------- */
 
   function findLinks(A, B) {
     const links = [], seen = new Set();
-    for (const ia of l3Ifs(A)) for (const ib of l3Ifs(B)) {
+    const usable = D => l3Ifs(D).filter(i => !isMgmt(i) && !isMgmt(phys(D, i)));
+    for (const ia of usable(A)) for (const ib of usable(B)) {
       for (const x of allAddr(ia)) for (const y of allAddr(ib)) {
         if (x.fam !== y.fam) continue;
         const host = x.fam === 4 ? 32 : 128;
@@ -27,17 +28,50 @@
   function suggestPairs(A, B, existing) {
     const out = [];
     if (!A.hostname || !B.hostname) return out;
-    const has = (d, s) => d && s && d.toLowerCase().includes(s.toLowerCase());
-    const cands = d => [...d.ifs.values()].filter(i => (i.kind === 'phys' || i.kind === 'lag') && !i.lag && i.desc);
-    for (const ia of cands(A)) {
-      if (!has(ia.desc, B.hostname)) continue;
-      for (const ib of cands(B)) {
-        if (!has(ib.desc, A.hostname)) continue;
-        const ok = ifVariants(B, ib.name).some(v => ia.desc.toLowerCase().includes(v)) || ifVariants(A, ia.name).some(v => ib.desc.toLowerCase().includes(v));
-        if (!ok) continue;
-        if (existing.some(l => (phys(A, l.a) === ia && phys(B, l.b) === ib) || (l.a === ia && l.b === ib))) continue;
-        out.push({ a: ia, b: ib, how: 'description' });
-      }
+    const cands = d => [...d.ifs.values()].filter(i => (i.kind === 'phys' || i.kind === 'lag') && !i.lag && i.desc && !isMgmt(i));
+    const taken = (ia, ib) => existing.some(l => (phys(A, l.a) === ia && phys(B, l.b) === ib) || (l.a === ia && l.b === ib)) || out.some(o => o.a === ia || o.b === ib);
+    const ca = cands(A).filter(i => mentions(i.desc, B.hostname, A.hostname));
+    const cb = cands(B).filter(i => mentions(i.desc, A.hostname, B.hostname));
+    // 1. Chaque description cite l'autre équipement ET le nom d'interface d'en face
+    for (const ia of ca) for (const ib of cb) {
+      const ok = ifVariants(B, ib.name).some(v => ia.desc.toLowerCase().includes(v)) || ifVariants(A, ia.name).some(v => ib.desc.toLowerCase().includes(v));
+      if (ok && !taken(ia, ib)) out.push({ a: ia, b: ib, how: 'description' });
+    }
+    // 2. Un seul port de chaque côté cite l'autre équipement : c'est le lien
+    const fa = ca.filter(i => !existing.some(l => phys(A, l.a) === i) && !out.some(o => o.a === i));
+    const fb = cb.filter(i => !existing.some(l => phys(B, l.b) === i) && !out.some(o => o.b === i));
+    if (fa.length === 1 && fb.length === 1 && !taken(fa[0], fb[0])) out.push({ a: fa[0], b: fb[0], how: 'description' });
+    return out;
+  }
+
+  /* Liens probables : interfaces qui se font face (même VLAN, ports reliés, descriptions)
+   * mais dont l'adressage ne correspond pas. Sans cela, une IP erronée ferait disparaître le lien. */
+  function probableLinks(A, B, found) {
+    const usedA = new Set(found.map(l => l.a)), usedB = new Set(found.map(l => l.b));
+    const free = (D, used) => [...D.ifs.values()].filter(i => l3Cfg(i) && !used.has(i) && !i.loopback && i.kind !== 'loopback' && !isMgmt(i) && !isMgmt(phys(D, i)));
+    const fa = free(A, usedA), fb = free(B, usedB);
+    if (!fa.length || !fb.length) return [];
+    const desc = suggestPairs(A, B, []);
+    const cands = [];
+    for (const ia of fa) for (const ib of fb) {
+      let s = 0; const why = [];
+      const ea = encapOf(A, ia), eb = encapOf(B, ib);
+      const va = ea.tag ?? ea.vlanif ?? null, vb = eb.tag ?? eb.vlanif ?? null;
+      const pa = phys(A, ia), pb = phys(B, ib);
+      if (va != null && va === vb) { s += 3; why.push('même VLAN ' + va); }
+      else if (va != null && vb != null) s -= 2;
+      if (desc.some(p => p.a === pa && p.b === pb)) { s += 3; why.push('ports reliés par leurs descriptions'); }
+      else if (eb.vlanif != null && desc.some(p => p.a === pa && carriers(B, eb.vlanif).some(c => c.name === p.b.name))) { s += 2; why.push(`VLAN ${eb.vlanif} transporté par le port relié`); }
+      else if (ea.vlanif != null && desc.some(p => p.b === pb && carriers(A, ea.vlanif).some(c => c.name === p.a.name))) { s += 2; why.push(`VLAN ${ea.vlanif} transporté par le port relié`); }
+      if ((mentions(ia.desc, B.hostname, A.hostname) || mentions(pa && pa.desc, B.hostname, A.hostname)) && (mentions(ib.desc, A.hostname, B.hostname) || mentions(pb && pb.desc, A.hostname, B.hostname))) { s += 3; why.push('descriptions croisées'); }
+      if (ia.v4.some(x => ib.v4.some(y => net4(x.n, 24) === net4(y.n, 24)))) { s += 1; why.push('adresses voisines'); }
+      if (s >= 3) cands.push({ a: ia, b: ib, s, why });
+    }
+    cands.sort((x, y) => y.s - x.s);
+    const out = [], ua = new Set(), ub = new Set();
+    for (const c of cands) {
+      if (ua.has(c.a) || ub.has(c.b)) continue;
+      ua.add(c.a); ub.add(c.b); out.push({ a: c.a, b: c.b, how: 'probable', why: c.why });
     }
     return out;
   }
@@ -46,15 +80,24 @@
     const res = [];
     const nA = name(A), nB = name(B);
     // --- Adressage
+    const badA = ia.badAddr || [], badB = ib.badAddr || [];
+    if (badA.length || badB.length) res.push(R('Adressage', 'Adresse IP', 'err', badA.length ? `« ${badA.join(', ')} » mal formée` : allAddr(ia).map(cidr).join(', ') || 'aucune', badB.length ? `« ${badB.join(', ')} » mal formée` : allAddr(ib).map(cidr).join(', ') || 'aucune',
+      `Adresse mal formée côté ${badA.length ? nA : nB}${badA.length && badB.length ? ' et ' + nB : ''} : l’équipement la refuserait, l’interface n’a donc pas d’adresse et aucun protocole ne peut monter sur ce lien.`));
     for (const fam of [4, 6]) {
       const xs = fam === 4 ? ia.v4 : ia.v6, ys = fam === 4 ? ib.v4 : ib.v6;
       if (!xs.length && !ys.length) continue;
+      if ((!xs.length && badA.length) || (!ys.length && badB.length)) continue;
       const lab = fam === 4 ? 'Adresse IPv4' : 'Adresse IPv6';
       let pair = null;
       for (const x of xs) for (const y of ys) { const l = Math.min(x.len, y.len); if (!pair && sameNet(x, y, l)) pair = [x, y]; }
       if (!pair) {
-        if (xs.length && ys.length) res.push(R('Adressage', lab, 'err', xs.map(cidr).join(', '), ys.map(cidr).join(', '), 'Aucune adresse dans le même sous-réseau.'));
-        else res.push(R('Adressage', lab, fam === 4 ? 'warn' : 'info', xs.map(cidr).join(', ') || 'aucune', ys.map(cidr).join(', ') || 'aucune', `IPv${fam} n’est configuré que d’un côté.`));
+        if (xs.length && ys.length) res.push(R('Adressage', lab, 'err', xs.map(cidr).join(', '), ys.map(cidr).join(', '), 'Les adresses ne sont pas dans le même sous-réseau : un des deux côtés a une IP ou un masque erroné. Aucun protocole ne montera sur ce lien.'));
+        else {
+          const routed = (D, i) => l3Cfg(i) || i.mpls || i.iso || !!ospfOf(D, i) || mplsOf(D, i).ldp || mplsOf(D, i).rsvp;
+          const routedBoth = routed(A, ia) && routed(B, ib);
+          res.push(R('Adressage', lab, fam === 4 ? (routedBoth ? 'err' : 'warn') : 'info', xs.map(cidr).join(', ') || 'aucune', ys.map(cidr).join(', ') || 'aucune',
+            fam === 4 && routedBoth ? `Aucune adresse IPv4 sur ${xs.length ? nB : nA} alors que l’interface est configurée pour le routage : mot-clé « address » manquant ou mal orthographié ? Aucun protocole ne montera.` : `IPv${fam} n’est configuré que d’un côté.`));
+        }
         continue;
       }
       const [x, y] = pair;
@@ -67,13 +110,22 @@
       const netS = fam === 4 ? v4str(net4(x.n, x.len)) + '/' + x.len : 'préfixe /' + x.len;
       res.push(R('Adressage', lab, 'ok', cidr(x), cidr(y), 'Même sous-réseau : ' + netS + '.'));
     }
-    const hasIp = allAddr(ia).length && allAddr(ib).length;
+    // Lien routé : les deux côtés sont configurés pour IP, même si une adresse est absente ou mal formée
+    const hasIp = (allAddr(ia).length || l3Cfg(ia)) && (allAddr(ib).length || l3Cfg(ib));
+    // Les descriptions citent-elles bien le voisin ? (erreur de câblage ou de documentation)
+    const dA = ia.desc || (pa0 => pa0 && pa0.desc)(phys(A, ia)), dB = ib.desc || (pb0 => pb0 && pb0.desc)(phys(B, ib));
+    if (dA || dB) {
+      const mA = mentions(dA, B.hostname, A.hostname), mB = mentions(dB, A.hostname, B.hostname);
+      if (!(mA && mB)) res.push(R('Interface', 'Description', 'info', dA || 'aucune', dB || 'aucune',
+        [!mA ? `la description côté ${nA} ne cite pas ${nB}` : '', !mB ? `la description côté ${nB} ne cite pas ${nA}` : ''].filter(Boolean).join(' ; ').replace(/^./, c => c.toUpperCase()) + ' : vérifiez le câblage ou la documentation du lien.'));
+      else res.push(R('Interface', 'Description', 'ok', dA, dB, 'Chaque description cite l’équipement d’en face.'));
+    }
     if ((ia.vrf || ib.vrf) && hasIp) res.push(R('Adressage', 'Table de routage', 'info', ia.vrf || 'globale', ib.vrf || 'globale', 'Les noms de VRF sont locaux ; vérifiez qu’il s’agit bien du même service.'));
 
     // --- État administratif
     const pa = phys(A, ia), pb = phys(B, ib);
     const offA = ia.disabled || (pa && pa.disabled), offB = ib.disabled || (pb && pb.disabled);
-    res.push(R('Interface', 'État administratif', offA || offB ? 'warn' : 'ok', offA ? 'désactivée' : 'active', offB ? 'désactivée (shutdown)' : 'active',
+    res.push(R('Interface', 'État administratif', offA || offB ? 'warn' : 'ok', offA ? 'désactivée' : 'active', offB ? 'désactivée' : 'active',
       offA || offB ? 'Une interface est désactivée : le lien ne montera pas.' : 'Les deux interfaces sont actives.'));
 
     // --- Encapsulation VLAN (lien L3)
@@ -151,6 +203,18 @@
       if (qa.duplex || qb.duplex) res.push(R('Interface', 'Duplex', dA === dB ? 'ok' : 'warn', dA, dB, dA === dB ? 'Duplex identique.' : 'Duplex forcé d’un côté ou différent : risque de duplex mismatch (erreurs CRC, collisions tardives).'));
     }
 
+    // --- LLDP sur les ports physiques
+    if (pa && pb && pa.kind !== 'vlanif' && pb.kind !== 'vlanif' && !isMgmt(pa)) {
+      const lA = lldpOn(A, la || pa), lB = lldpOn(B, lb || pb);
+      if (lA !== null && lB !== null && (lA || lB)) res.push(R('Interface', 'LLDP', lA && lB ? 'ok' : 'info', lA ? 'activé' : 'non activé', lB ? 'activé' : 'non activé',
+        lA && lB ? 'LLDP actif sur les deux ports.' : `LLDP n’est actif que sur ${lA ? nA : nB} : pas de découverte du voisin sur ce lien pour le dépannage.`));
+    }
+    // --- Filtres de pare-feu sur l'interface
+    if (hasIp && (ia.filterIn || ia.filterOut || ib.filterIn || ib.filterOut)) {
+      const f = i => [i.filterIn && 'entrée ' + i.filterIn, i.filterOut && 'sortie ' + i.filterOut].filter(Boolean).join(', ') || 'aucun';
+      res.push(R('Interface', 'Filtres', f(ia) === f(ib) ? 'ok' : 'info', f(ia), f(ib), f(ia) === f(ib) ? 'Mêmes filtres des deux côtés.' : 'Filtres différents de chaque côté : vérifiez que le trafic de contrôle (OSPF, BFD, LDP, BGP) est bien autorisé dans les deux sens.'));
+    }
+
     // --- Niveau 2 (paires physiques)
     if (!hasIp) {
       const L = l2Profile(A, pa), M = l2Profile(B, pb);
@@ -187,7 +251,33 @@
     checkIsis(res, A, B, sA, sB);
     // --- MPLS
     if (hasIp) checkMpls(res, A, B, mplsOf(A, ia), mplsOf(B, ib));
+    // --- Qualité de service
+    checkCos(res, A, B, cosOf(A, ia), cosOf(B, ib));
     return res;
+  }
+
+  function checkCos(res, A, B, ca, cb) {
+    if (!ca && !cb) return;
+    const nA = name(A), nB = name(B);
+    if (!ca || !cb) {
+      res.push(R('QoS', 'Configuration QoS', 'warn', ca ? 'configurée' : 'aucune', cb ? 'configurée' : 'aucune', `La QoS n’est configurée que sur ${ca ? nA : nB} : files d’attente et marquages ne seront pas symétriques sur ce lien.`));
+      return;
+    }
+    const fm = m => Object.entries(m).map(([k, v]) => k + ' ' + v).join(', ') || 'aucun';
+    if (Object.keys(ca.classifiers).length + Object.keys(ca.rewrite).length + Object.keys(cb.classifiers).length + Object.keys(cb.rewrite).length) {
+      const probs = [];
+      for (const t of Object.keys(ca.rewrite)) if (!cb.classifiers[t]) probs.push(`${nA} marque en ${t.toUpperCase()} mais ${nB} ne classifie pas sur ${t.toUpperCase()}`);
+      for (const t of Object.keys(cb.rewrite)) if (!ca.classifiers[t]) probs.push(`${nB} marque en ${t.toUpperCase()} mais ${nA} ne classifie pas sur ${t.toUpperCase()}`);
+      for (const t of Object.keys(ca.classifiers)) if (ca.classifiers[t] !== 'trust' && !cb.rewrite[t] && Object.keys(cb.rewrite).length) probs.push(`${nA} classifie sur ${t.toUpperCase()} mais ${nB} marque autrement`);
+      for (const t of Object.keys(cb.classifiers)) if (cb.classifiers[t] !== 'trust' && !ca.rewrite[t] && Object.keys(ca.rewrite).length) probs.push(`${nB} classifie sur ${t.toUpperCase()} mais ${nA} marque autrement`);
+      const same = fm(ca.classifiers) === fm(cb.classifiers) && fm(ca.rewrite) === fm(cb.rewrite);
+      res.push(R('QoS', 'Classification et marquage', probs.length ? 'warn' : 'ok', `classifie : ${fm(ca.classifiers)} ; marque : ${fm(ca.rewrite)}`, `classifie : ${fm(cb.classifiers)} ; marque : ${fm(cb.rewrite)}`,
+        probs.length ? probs.join(' ; ') + ' : le trafic risque d’arriver dans la mauvaise classe de service.' : (same ? 'Marquage et classification identiques des deux côtés.' : 'Types cohérents, mais noms de règles différents : vérifiez qu’elles utilisent les mêmes codes.')));
+    }
+    if (ca.scheduler || cb.scheduler) res.push(R('QoS', 'Ordonnancement', (ca.scheduler || '') === (cb.scheduler || '') ? 'ok' : 'info', ca.scheduler || 'aucun', cb.scheduler || 'aucun',
+      (ca.scheduler || '') === (cb.scheduler || '') ? 'Même ordonnancement des files.' : 'Ordonnancements différents : les files d’attente ne sont pas traitées de la même façon dans chaque sens.'));
+    if (ca.shaping || cb.shaping) res.push(R('QoS', 'Shaping', (ca.shaping || '') === (cb.shaping || '') ? 'ok' : 'warn', ca.shaping || 'aucun', cb.shaping || 'aucun',
+      (ca.shaping || '') === (cb.shaping || '') ? 'Même débit de shaping.' : 'Shaping différent de chaque côté : débit asymétrique sur le lien.'));
   }
 
   function fmtAuth(a) {
@@ -221,7 +311,10 @@
       }
     }
     if (oA.cost != null || oB.cost != null) res.push(R(P, 'Coût', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'ok' : 'info', oA.cost ?? 'auto (bande passante)', oB.cost ?? 'auto (bande passante)', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'Coûts symétriques.' : 'Coûts asymétriques : le trafic aller et retour peut prendre des chemins différents.'));
-    if (oA.bfd || oB.bfd) res.push(R(P, 'BFD', oA.bfd && oB.bfd ? 'ok' : 'warn', oA.bfd ? 'activé' + (oA.bfd.min ? ` (${oA.bfd.min} ms × ${oA.bfd.mult || 3})` : '') : 'non', oB.bfd ? 'activé' + (oB.bfd.min ? ` (${oB.bfd.min} ms × ${oB.bfd.mult || 3})` : '') : 'non',
+    const bfdT = b => b && b.min ? `${b.min} ms × ${b.mult || 3}` : null;
+    if (oA.bfd && oB.bfd && bfdT(oA.bfd) && bfdT(oB.bfd) && bfdT(oA.bfd) !== bfdT(oB.bfd)) res.push(R(P, 'BFD', 'info', 'activé (' + bfdT(oA.bfd) + ')', 'activé (' + bfdT(oB.bfd) + ')',
+      `Timers BFD différents : la session prend l’intervalle le plus lent des deux (${Math.max(oA.bfd.min, oB.bfd.min)} ms), la détection de panne sera plus lente que prévu d’un côté.`));
+    else if (oA.bfd || oB.bfd) res.push(R(P, 'BFD', oA.bfd && oB.bfd ? 'ok' : 'warn', oA.bfd ? 'activé' + (oA.bfd.min ? ` (${oA.bfd.min} ms × ${oA.bfd.mult || 3})` : '') : 'non', oB.bfd ? 'activé' + (oB.bfd.min ? ` (${oB.bfd.min} ms × ${oB.bfd.mult || 3})` : '') : 'non',
       oA.bfd && oB.bfd ? 'BFD des deux côtés (les timers sont négociés).' : 'BFD d’un seul côté : la session BFD ne montera pas, pas de détection rapide.'));
   }
   function checkIsis(res, A, B, sA, sB) {
@@ -255,7 +348,13 @@
       res.push(R('MPLS', 'LDP', probs.length ? 'err' : 'ok', lab(mA, A), lab(mB, B), probs.length ? probs.join(' ; ') + '.' : 'LDP actif des deux côtés.'));
     }
     if (mA.rsvp || mB.rsvp) res.push(R('MPLS', 'RSVP-TE', mA.rsvp === mB.rsvp ? 'ok' : 'warn', mA.rsvp ? 'actif' : 'non', mB.rsvp ? 'actif' : 'non', mA.rsvp === mB.rsvp ? 'RSVP des deux côtés.' : 'RSVP d’un seul côté : les tunnels TE ne passeront pas ici.'));
+    if (mA.rsvp && mB.rsvp) {
+      if (mA.rsvpBw || mB.rsvpBw) res.push(R('MPLS', 'Bande passante RSVP', (mA.rsvpBw || '') === (mB.rsvpBw || '') ? 'ok' : 'warn', mA.rsvpBw || 'débit du lien', mB.rsvpBw || 'débit du lien',
+        (mA.rsvpBw || '') === (mB.rsvpBw || '') ? 'Même bande passante réservable.' : 'Bande passante réservable différente dans chaque sens : le CSPF peut accepter un LSP dans un sens et le refuser dans l’autre.'));
+      if (mA.linkProtection || mB.linkProtection) res.push(R('MPLS', 'Protection de lien', mA.linkProtection && mB.linkProtection ? 'ok' : 'warn', mA.linkProtection ? 'activée' : 'non', mB.linkProtection ? 'activée' : 'non',
+        mA.linkProtection && mB.linkProtection ? 'Protection de lien (fast reroute) des deux côtés.' : 'Protection de lien d’un seul côté : en cas de coupure, le secours rapide ne fonctionne que dans un sens.'));
+    }
   }
 
-  Object.assign(V, { findLinks, ifVariants, suggestPairs, checkLink, fmtAuth, checkOspf, checkIsis, checkMpls });
+  Object.assign(V, { probableLinks, findLinks, ifVariants, suggestPairs, checkLink, fmtAuth, checkOspf, checkIsis, checkMpls });
 })(globalThis.VAV = globalThis.VAV || {});

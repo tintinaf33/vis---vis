@@ -31,8 +31,12 @@ Les contrôles (`js/analysis/`) ne testent jamais le nom d’un constructeur : i
 | `lldp` | `{ enabled }` |
 | `vlans` | `Map` nom ou numéro → numéro de VLAN |
 | `notes` | `[{ sev: 'info', msg }]` affichées dans les contrôles globaux |
+| `instances` | `Map` nom → `{ name, type, rd, rtImport: Set, rtExport: Set, ifaces, sites: [{ name, id }], vlanId }` (VRF, VPLS…) |
+| `rsvpBw`, `rsvpLP` | bande passante RSVP par interface, interfaces avec protection de lien |
+| `sys` | `{ ntp, syslog, radius, snmp, tz, policies, filters, lsps, ospfTE }` pour le mode comparaison |
+| `groups` | `{ defined, applied, unused, inherited }` si le constructeur a une notion de gabarits |
 
-Interface (`getIf`) : `name`, `desc`, `v4` / `v6` (via `addAddr(i, '10.0.0.1/30')`), `disabled`, `mtu`, `ipMtu`, `vlanId`, `parent` (pour une sous-interface ou unité), `kind` (`phys`, `unit`, `sub`, `vlanif`, `lag`, `loopback`), `lag` (agrégat parent d’un membre), `lacpMode` (`active`, `passive`, `static`) et `lacpPeriod` (`fast`, `slow`) sur l’agrégat, `speed` (Mb/s, via `normSpeed`), `duplex`, `vrf`, `loopback`.
+Interface (`getIf`) : `name`, `desc`, `v4` / `v6` (via `addAddr(i, '192.0.2.1/30')`), `disabled`, `mtu`, `ipMtu`, `vlanId`, `parent` (pour une sous-interface ou unité), `kind` (`phys`, `unit`, `sub`, `vlanif`, `lag`, `loopback`), `lag` (agrégat parent d’un membre), `lacpMode` (`active`, `passive`, `static`) et `lacpPeriod` (`fast`, `slow`) sur l’agrégat, `speed` (Mb/s, via `normSpeed`), `duplex`, `vrf`, `loopback`.
 
 Les familles BGP sont normalisées : `ipv4-unicast`, `ipv6-unicast`, `vpnv4`, `vpnv6`, `evpn`, `l2vpn`, `ipv4-labeled`, `ipv6-labeled`, `flowspec`, `rtc`.
 
@@ -47,10 +51,13 @@ Les secrets passent par `secret(raw)` (gère `$9$`) ou un objet `{ kind, raw, va
 | `detect(text)` | score de 0 à 1 ; le constructeur au meilleur score est retenu |
 | `parse(text)` | renvoie le modèle |
 | `formatLabel(dev)` | libellé du format lu |
+| `lines(text)` | liste `{ section, text }` des lignes normalisées, pour la comparaison ligne à ligne (une commande complète par ligne, avec son contexte) |
 | `ipMtu(dev, i)` | `{ v, how }` : MTU IP effective et explication |
 | `isisOf(dev, i)` | `{ levels: Set, p2p, passive, auth, bfd }` ou `null` |
 | `mplsOf(dev, i)` | `{ ldp, mplsFamily, mplsProto, rsvp, … }` |
 | `l2Profile(dev, port)` | `{ mode, untagged (numéro, 'L3' ou null), tagged (Set ou 'all') }` |
+| `cosOf(dev, i)` | `{ scheduler, shaping, classifiers: { exp: nom }, rewrite: { exp: nom } }` ou `null` |
+| `lldpOn(dev, port)` | LLDP actif sur ce port |
 | `encapOf(dev, i)` | `{ tag }`, `{ vlanif }` ou `{ broken: true }`, avec `label` |
 | `ifAliases(nom)` | variantes du nom (abréviations) pour relier les descriptions |
 | `ospfAdvertisesMtu(ospfIf)` / `ospfMtuHint` | l’équipement annonce-t-il sa MTU dans les paquets DD |

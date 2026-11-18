@@ -6,6 +6,11 @@ Comparateur de configurations de routeurs voisins. Collez la configuration de de
 
 Tout s’exécute dans le navigateur : aucune configuration n’est envoyée sur un serveur, aucune dépendance n’est à installer.
 
+## Deux modes d’analyse
+
+- **Deux voisins** : deux équipements reliés entre eux. L’outil retrouve les liens qui les connectent et vérifie que chaque côté attend ce que l’autre envoie. Seules les interfaces qui se font face sont contrôlées ; les autres sont listées dans « Interfaces non comparées ».
+- **Comparer deux configurations** : le même équipement avant et après une modification, ou deux équipements censés être configurés pareil. Toutes les interfaces sont comparées une à une par leur nom, puis le système, le routage, chaque voisin BGP et enfin la totalité des lignes de configuration.
+
 ## Constructeurs pris en charge
 
 | Constructeur | Modèles testés | Commande à exporter |
@@ -13,7 +18,7 @@ Tout s’exécute dans le navigateur : aucune configuration n’est envoyée sur
 | Juniper Junos | MX104 (et MX, EX, QFX, SRX, ACX) | `show configuration` ou `show configuration \| display set` |
 | HPE Comware 7 | 5520 HI (et 5940, 5710, 7500…) | `display current-configuration` |
 
-Pour Junos avec des `apply-groups`, préférez `show configuration | display inheritance | display set`.
+Les `groups` / `apply-groups` Junos sont dépliés automatiquement, jokers compris. Les captures de terminal (invite, bannière, CRLF) sont acceptées telles quelles.
 
 ## Utilisation en local
 
@@ -46,25 +51,35 @@ Pour obtenir une page en ligne : **Settings → Pages → Build and deployment �
 
 L’intégration continue (`.github/workflows/ci.yml`) lance les tests à chaque push et vérifie que `dist/` est à jour.
 
+> Les configurations du dossier `samples/` sont entièrement fictives : adresses dans les plages réservées à la documentation (RFC 5737), numéros d’AS de documentation (RFC 5398), secrets générés à partir de mots de passe inventés.
+
 > Ne committez jamais de configurations de production : elles contiennent adresses, topologie et clés. Le `.gitignore` exclut le dossier `configs-privees/`.
 
 ## Ce qui est vérifié
 
-**Pour chaque lien** (trouvé par sous-réseau commun, par descriptions croisées ou désigné à la main) :
+**Pour chaque lien** (trouvé par sous-réseau commun, par descriptions croisées ou désigné à la main ; les interfaces de management sont ignorées) :
 
-- adressage : même sous-réseau, même masque, pas de doublon, pas d’adresse réseau ou de broadcast ;
-- état administratif, vitesse et duplex ;
-- encapsulation : `vlan-id` Junos face à une `Vlan-interface` HPE, avec recherche du port qui transporte réellement le VLAN ;
-- MTU IP effective, recalculée selon les règles de chaque constructeur ;
-- agrégats : mode LACP, cadence, nombre de membres, liens minimum ;
-- niveau 2 : VLAN non tagué (natif ou accès), VLAN tagués présents d’un seul côté ;
-- OSPF et OSPFv3 : area, type d’area, interface passive, type de réseau, timers, authentification, coût, BFD ;
-- IS-IS : famille ISO, type de circuit, niveaux communs, area pour le L1, authentification, BFD ;
-- MPLS : LDP des deux côtés et prérequis (`family mpls`, `mpls enable`, `mpls ldp`, `lsr-id`), RSVP.
+- adressage : même sous-réseau, même masque, pas de doublon, pas d’adresse réseau ou de broadcast ; un lien dont l’IP est erronée reste visible comme « lien probable » ;
+- état administratif, vitesse, duplex, descriptions qui se citent mutuellement, LLDP, filtres ;
+- encapsulation VLAN et MTU IP effective, recalculée selon les règles de chaque constructeur ;
+- agrégats : mode LACP, cadence, nombre de membres ;
+- niveau 2 : VLAN non tagué, VLAN tagués présents d’un seul côté ;
+- OSPF et OSPFv3 : area, type d’area, passive, type de réseau, timers, authentification (clés comparées), coût, BFD et ses timers ;
+- IS-IS : famille ISO, type de circuit, niveaux, area, authentification ;
+- MPLS : LDP et ses prérequis, RSVP (bande passante réservable, protection de lien) ;
+- QoS : classification et marquage croisés (EXP, DSCP), ordonnancement, shaping.
 
-**Pour chaque session BGP** : réciprocité, adresses source, AS attendus dans les deux sens, type iBGP/eBGP, multihop eBGP, mot de passe MD5, familles d’adresses, hold time, BFD.
+**Pour chaque session BGP** : réciprocité, adresses source, joignabilité des loopbacks dans l’IGP, AS, type, multihop, mot de passe, familles, hold time, BFD.
 
-**Globalement** : router-ID, NET IS-IS, LSR-ID, adresses IP en double, LLDP.
+**Pour chaque service partagé** (VRF, VPLS appariés par route-target) : type, route-targets croisés, RD, sites VPLS, normalisation VLAN, famille BGP requise, interfaces attachées.
+
+**Syntaxe et valeurs** : accolades, points-virgules, guillemets, adresses mal formées où qu’elles soient, adresses source qui n’appartiennent pas à l’équipement, objets cités mais jamais définis, code-points et parts de QoS, ports, valeurs hors limites (VLAN, MTU, timers, AS…), RD et route-targets mal formés, mots-clés mal orthographiés, interfaces citées mais inexistantes, adresses en double sur un même équipement. Les anomalies s’affichent dès la saisie.
+
+**Paramètres communs du réseau** : serveurs NTP, RADIUS et syslog, fuseau horaire et tous les objets de même nom (prefix-lists, filtres, politiques, QoS, LSP, SNMP, classes de connexion…) doivent être identiques sur les deux équipements ; les secrets sont comparés sans jamais être affichés.
+
+**Globalement** : router-ID, NET IS-IS, LSR-ID, IP en double, LLDP, gabarits (groupes appliqués d’un seul côté), OSPF traffic-engineering et reference-bandwidth.
+
+Les configurations Junos sont lues en format hiérarchique ou `display set`, avec dépliage complet des `groups` / `apply-groups` (jokers compris) : inutile de passer par `display inheritance`.
 
 ## Développement
 
@@ -97,7 +112,7 @@ Pour ajouter un fabricant, lisez [docs/ajouter-un-constructeur.md](docs/ajouter-
 ## Limites connues
 
 - Les clés HPE `$c$` sont chiffrées de façon non réversible : l’outil signale qu’elles sont à comparer à la main. Les clés Junos `$9$` sont décodées localement pour la comparaison et ne sont jamais affichées.
-- Les `apply-groups` Junos ne sont pas dépliés (utilisez `display inheritance`).
+- Les conditions `when` des groupes Junos ne sont pas évaluées.
 - Les liens de niveau 2 sans adresse IP ne sont trouvés que par les descriptions ou par une paire manuelle.
 
 ## Licence

@@ -48,6 +48,30 @@ button,select,input,textarea{font:inherit;color:inherit}
 .privacy{grid-column:2;margin:0;font-size:.9rem;color:var(--muted);display:flex;gap:8px;align-items:center}
 .privacy svg{flex:none;color:var(--ok)}
 
+/* Choix du type d'analyse */
+.modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.modes button{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px 12px 44px;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:2px}
+.modes button::before{content:"";position:absolute;left:16px;top:15px;width:16px;height:16px;border-radius:50%;border:2px solid var(--line)}
+.modes button[aria-checked="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.modes button[aria-checked="true"]::before{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 0 4px,transparent 5px)}
+.modes b{font-family:var(--cond);font-weight:600;font-size:1.1rem}
+.modes span{color:var(--muted);font-size:.9rem;line-height:1.4}
+.hint{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-top:20px;padding:14px 18px;border-radius:10px;background:var(--info-bg);border:1px solid var(--line)}
+.hint p{margin:0;max-width:80ch;font-size:.95rem}
+.hint b{font-weight:600}
+.bhead .title.mono{font-family:var(--mono);font-weight:500;font-size:1.05rem}
+.names code{font-family:var(--mono);font-size:.78rem;display:inline-block;margin:0 10px 6px 0}
+.index .more{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+.diff{padding:6px 20px 18px;overflow-x:auto}
+.dsec h4{font-family:var(--mono);font-weight:500;font-size:.82rem;color:var(--muted);margin:14px 0 4px}
+.dl{display:flex;gap:10px;align-items:baseline;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:.78rem;white-space:pre}
+.dl code{font-family:inherit}
+.dl.del{background:var(--err-bg)} .dl.del>span:first-child{color:var(--err);font-weight:700}
+.dl.add{background:var(--ok-bg)} .dl.add>span:first-child{color:var(--ok);font-weight:700}
+.dl+.dl{margin-top:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:640px){.modes{grid-template-columns:minmax(0,1fr)}}
+
 /* Établi : deux configurations face à face */
 .bench{display:grid;grid-template-columns:minmax(0,1fr) 132px minmax(0,1fr);gap:0;align-items:stretch}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-width:0}
@@ -63,6 +87,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 .detect{margin:0;padding:10px 16px;border-top:1px solid var(--line-soft);font-size:.9rem;color:var(--muted);min-height:44px}
 .detect strong{color:var(--ink);font-weight:600}
 .detect.bad{color:var(--err)}
+.detect .syntax{display:block;margin-top:6px;padding:6px 10px;border-radius:6px;background:var(--err-bg);color:var(--ink)}
 
 /* Le câble central */
 .patch{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px 10px}
@@ -158,6 +183,15 @@ th{font-family:var(--cond);font-weight:600;font-size:.88rem;color:var(--muted)}
 td{font-family:var(--mono)}
 td.off{text-decoration:line-through;color:var(--muted)}
 
+.cover{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;padding:14px 20px 20px}
+.cover h4{font-family:var(--cond);font-weight:600;font-size:1.05rem;margin:0 0 8px}
+.unm{list-style:none;margin:0;padding:0;font-size:.88rem}
+.unm li{padding:7px 0;border-top:1px dashed var(--line-soft);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.unm li code{font-family:var(--mono);font-size:.8rem}
+.unm li span{color:var(--muted);font-family:var(--mono);font-size:.78rem}
+.unm li em{flex-basis:100%;color:var(--muted);font-style:normal;font-size:.84rem}
+.unm li b{font-weight:600;font-size:.78rem;color:var(--warn);background:var(--warn-bg);padding:1px 8px;border-radius:999px}
+@media (max-width:640px){.cover{grid-template-columns:minmax(0,1fr);padding-left:14px;padding-right:14px}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
 .foot{color:var(--muted);font-size:.85rem;padding:24px 0 40px;border-top:1px solid var(--line);margin-top:24px}
@@ -209,15 +243,20 @@ td.off{text-decoration:line-through;color:var(--muted)}
     </svg>
     <div>
       <h1>Vis-à-vis</h1>
-      <p class="lede">Collez la configuration de deux équipements voisins. L’outil retrouve les liens qui les relient, puis vérifie paramètre par paramètre que chaque côté attend exactement ce que l’autre envoie : adressage, MTU, VLAN, agrégats LACP, OSPF, IS-IS, LDP et sessions BGP.</p>
+      <p class="lede">Collez deux configurations Junos ou HPE Comware. Vis-à-vis vérifie que deux voisins sont cohérents de chaque côté de leurs liens, ou compare deux configurations interface par interface, paramètre par paramètre et ligne par ligne.</p>
     </div>
     <p class="privacy"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m5.3 8 1.9 1.9 3.6-3.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Analyse faite dans votre navigateur : aucune configuration n’est envoyée nulle part.</p>
   </header>
 
+  <div class="modes" role="radiogroup" aria-label="Type d’analyse">
+    <button type="button" role="radio" aria-checked="true" data-mode="pair"><b>Deux voisins</b><span>Deux équipements reliés entre eux : vérifie que chaque lien est cohérent des deux côtés (adressage, VLAN, OSPF, BGP…).</span></button>
+    <button type="button" role="radio" aria-checked="false" data-mode="diff"><b>Comparer deux configurations</b><span>Même équipement avant et après une modification, ou deux équipements censés être configurés pareil : toutes les interfaces, tous les paramètres, toutes les lignes.</span></button>
+  </div>
+
   <section class="bench" aria-label="Configurations à comparer">
     <article class="pane" id="paneA">
       <div class="pane-head">
-        <h2><span class="side-tag">A</span>Premier équipement</h2>
+        <h2><span class="side-tag">A</span><span id="titleA">Premier équipement</span></h2>
         <select id="venA" aria-label="Constructeur du côté A"><option value="auto">Détection automatique</option></select>
         <label class="filebtn">Ouvrir un fichier<input type="file" id="fileA" accept=".txt,.conf,.cfg,.log,text/plain"></label>
       </div>
@@ -234,7 +273,7 @@ td.off{text-decoration:line-through;color:var(--muted)}
 
     <article class="pane" id="paneB">
       <div class="pane-head">
-        <h2><span class="side-tag">B</span>Équipement voisin</h2>
+        <h2><span class="side-tag">B</span><span id="titleB">Équipement voisin</span></h2>
         <select id="venB" aria-label="Constructeur du côté B"><option value="auto">Détection automatique</option></select>
         <label class="filebtn">Ouvrir un fichier<input type="file" id="fileB" accept=".txt,.conf,.cfg,.log,text/plain"></label>
       </div>
@@ -288,15 +327,30 @@ td.off{text-decoration:line-through;color:var(--muted)}
   }
   function net6(b, l) { const all = (1n << 128n) - 1n; const mask = l <= 0 ? 0n : (all ^ ((1n << BigInt(128 - l)) - 1n)); return b & mask; }
   function sameNet(x, y, l) { return x.fam === 4 ? net4(x.n, l) === net4(y.n, l) : net6(x.n, l) === net6(y.n, l); }
+  // Ajoute une adresse « ip/longueur » ; une adresse mal formée n'est jamais ignorée en silence :
+  // elle est conservée dans i.badAddr pour être signalée.
   function addAddr(i, cidr, extra) {
-    if (!cidr) return;
-    const [ip, l] = cidr.split('/');
-    if (ip.includes(':')) { const b = v6big(ip); if (b !== null) i.v6.push(Object.assign({ fam: 6, ip, len: l ? +l : 128, n: b }, extra || {})); }
-    else { const n = v4int(ip); if (n !== null) i.v4.push(Object.assign({ fam: 4, ip, len: l ? +l : 32, n }, extra || {})); }
+    if (!cidr) return false;
+    const parts = String(cidr).split('/');
+    const ip = parts[0], l = parts[1];
+    const okLen = (max) => l === undefined || (/^\d{1,3}$/.test(l) && +l <= max);
+    if (parts.length <= 2 && ip.includes(':')) {
+      const b = v6big(ip);
+      if (b !== null && okLen(128)) { i.v6.push(Object.assign({ fam: 6, ip, len: l ? +l : 128, n: b }, extra || {})); return true; }
+    } else if (parts.length <= 2) {
+      const n = v4int(ip);
+      if (n !== null && okLen(32)) { i.v4.push(Object.assign({ fam: 4, ip, len: l ? +l : 32, n }, extra || {})); return true; }
+    }
+    (i.badAddr = i.badAddr || []).push(String(cidr));
+    return false;
   }
+  // Masque décimal valide (bits à 1 contigus)
+  function validMask(m) { const n = v4int(m); if (n === null) return false; const l = maskLen(m); return ((lenMask(l) >>> 0) === (n >>> 0)); }
+  const isIPv4 = s => v4int(s) !== null;
+  const isIP = s => v4int(s) !== null || v6big(s) !== null;
   const cidr = a => a.ip + '/' + a.len;
 
-  Object.assign(V, { v4int, v4str, maskLen, lenMask, net4, v6big, net6, sameNet, addAddr, cidr });
+  Object.assign(V, { validMask, isIPv4, isIP, v4int, v4str, maskLen, lenMask, net4, v6big, net6, sameNet, addAddr, cidr });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
@@ -431,13 +485,25 @@ td.off{text-decoration:line-through;color:var(--muted)}
   function newDev(vendor) {
     return {
       vendor, hostname: '', ifs: new Map(), vlans: new Map(), notes: [], vrfs: new Set(),
+      // Anomalies de syntaxe ou de valeur relevées à la lecture : { sev, msg, ifname? }
+      issues: [],
       routerId: null, lsrId: null, ldpGlobal: false,
       ospf: { rid: null, areas: {}, ifs: new Map(), procs: [] },
       ospf3: { rid: null, areas: {}, ifs: new Map(), procs: [] },
       isis: { enabled: false, nets: [], globalLevels: new Set([1, 2]), ifs: new Map(), procs: {} },
       ldp: new Set(), mpls: new Set(), rsvp: new Set(),
       bgp: { as: null, rid: null, neighbors: [] },
-      lldp: { enabled: null, all: false, ifs: new Set() }
+      lldp: { enabled: null, all: false, ifs: new Set() },
+      // Services (VRF, VPLS…) : nom → { name, type, rd, rtImport, rtExport, ifaces, sites, vlanId }
+      instances: new Map(),
+      // Qualité de service par interface (nom exact ou motif à joker) → { scheduler, shaping, classifiers, rewrite }
+      cos: new Map(),
+      rsvpBw: new Map(), rsvpLP: new Set(),
+      // Paramètres système comparés en mode « deux configurations »
+      sys: { ntp: [], syslog: [], radius: [], snmp: [], tz: null, policies: [], filters: [], lsps: [], ospfTE: false },
+      groups: { defined: [], applied: [], unused: [], inherited: 0 },
+      // Objets nommés (prefix-lists, filtres, politiques, QoS, serveurs…) : clé → { show, lines: Set }
+      objects: new Map()
     };
   }
   function getIf(dev, name) {
@@ -474,9 +540,38 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return dev;
   }
 
+  /* ---------- Anomalies de lecture ---------- */
+  function issue(dev, sev, msg, ifname) { if (!dev.issues.some(x => x.msg === msg)) dev.issues.push({ sev, msg, ifname: ifname || null }); }
+  // Vérificateurs de valeurs courants
+  const isInt = (v, min, max) => /^\d+$/.test(String(v)) && +v >= min && +v <= max;
+  const isAS = v => /^\d+$/.test(String(v)) ? (+v >= 1 && +v <= 4294967295) : /^\d+\.\d+$/.test(String(v));
+  const isRT = v => /^target:((\d{1,3}\.){3}\d{1,3}|\d+L?):\d+$/.test(String(v));
+  const isRD = v => /^((\d{1,3}\.){3}\d{1,3}|\d+L?):\d+$/.test(String(v));
+  const isRate = v => /^\d+(\.\d+)?[kmgt]?$/i.test(String(v)) || /^\d+(\.\d+)?\s*(percent|%)$/i.test(String(v));
+
   /* ---------- Accès communs ---------- */
+  // Interfaces de management (hors bande) : jamais considérées comme un lien entre voisins
+  const isMgmt = i => /^(fxp\d|em\d|me\d|vme|re\d:mgmt|mgmt|M-GigabitEthernet|MGE|Management)/i.test(String(i && i.name || ''));
+  // Une description cite-t-elle l'équipement « host » ? Accepte le nom complet ou ses mots distinctifs
+  // (SITE_NORD-PK12_02 désigne bien SITE_NORD-PK12_DESSERTE_ROUT_02).
+  const GENERIC = new Set(['rout', 'router', 'routeur', 'rtr', 'desserte', 'core', 'edge', 'switch', 'swi', 'access', 'acces', 'dist', 'agg', 'fo', 'liaison', 'vers', 'lien']);
+  const words = h => String(h || '').toLowerCase().split(/[^a-z0-9]+/).filter(x => x.length >= 3 && !/^\d+$/.test(x));
+  function mentions(desc, host, selfHost) {
+    if (!desc || !host) return false;
+    const d = desc.toLowerCase();
+    if (host.length > 2 && d.includes(host.toLowerCase())) return true;
+    const mine = new Set(words(selfHost));
+    const keys = words(host).filter(x => !mine.has(x) && !GENERIC.has(x));
+    if (!keys.length) return false;
+    const hit = keys.filter(k => d.split(/[^a-z0-9]+/).includes(k) || d.includes(k));
+    return hit.some(k => /[a-z]{4,}/.test(k)) && hit.length >= Math.ceil(keys.length / 2);
+  }
+  // Jokers Junos (« ge-1/1/* ») dans un nom d'interface
+  const globMatch = (pat, s) => new RegExp('^' + String(pat).replace(/^<(.*)>$/, '$1').replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$').test(s);
   const allAddr = i => [...i.v4, ...i.v6];
   const l3Ifs = dev => [...dev.ifs.values()].filter(i => allAddr(i).length);
+  // Interface configurée pour le routage, même si son adresse est absente ou mal formée
+  const l3Cfg = i => !!(allAddr(i).length || (i.badAddr && i.badAddr.length) || i.inet || i.inet6);
   const phys = (dev, i) => (i.parent ? dev.ifs.get(i.parent) : i) || i;
   const name = d => d.hostname || (adapter(d) ? adapter(d).short : '?');
   const R = (cat, label, sev, a, b, msg) => ({ cat, label, sev, a: a == null ? '—' : String(a), b: b == null ? '—' : String(b), msg: msg || '' });
@@ -489,69 +584,174 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return out;
   }
 
-  Object.assign(V, { newDev, getIf, vendors, registerVendor, adapter, detectVendor, parse, allAddr, l3Ifs, phys, name, R, resolveVlans });
+  Object.assign(V, { l3Cfg, issue, isInt, isAS, isRT, isRD, isRate, isMgmt, mentions, globMatch, newDev, getIf, vendors, registerVendor, adapter, detectVendor, parse, allAddr, l3Ifs, phys, name, R, resolveVlans });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
 /* Vis-à-vis : Constructeur : Juniper Junos (lecture hiérarchique et display set) */
 (function (V) {
   'use strict';
-  const { addAddr, allAddr, getIf, mapNet, name, newDev, normArea, normSpeed, parse, phys, registerVendor, resolveVlans, secret, tok } = V;
+  const { J9, v4int, issue, isInt, isAS, isRT, isRD, isRate, isIP, isIPv4, globMatch, addAddr, allAddr, getIf, mapNet, name, newDev, normArea, normSpeed, parse, phys, registerVendor, resolveVlans, secret, tok } = V;
 
   /* ---------- Junos ---------- */
+  // Convertit le format hiérarchique en lignes « set ». Les défauts de structure (accolade ou point-virgule
+  // manquant, guillemet non fermé…) ne sont pas ignorés : ils sont listés dans le tableau rendu (propriété issues).
   function junosToSet(text) {
-    let s = text.replace(/\/\*[\s\S]*?\*\//g, '');
-    s = s.split(/\r?\n/).filter(l => !/^\s*\{(master|backup|primary|secondary|linecard)[^}]*\}\s*$/i.test(l) && !/^\s*[\w.-]+@[\w.-]+[>#%]/.test(l)).join('\n');
-    const toks = []; let i = 0;
+    let s = String(text || '').replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
+    s = s.split(/\r?\n/).map(l => (/^\s*\{(master|backup|primary|secondary|linecard)[^}]*\}\s*$/i.test(l) || /^\s*[\w.+-]+@[\w.+-]+[>#%]/.test(l)) ? '' : l).join('\n');
+    const toks = [], issues = []; let i = 0, ln = 1;
     while (i < s.length) {
       const c = s[i];
+      if (c === '\n') { ln++; i++; continue; }
       if (c === '#') { while (i < s.length && s[i] !== '\n') i++; continue; }
       if (/\s/.test(c)) { i++; continue; }
-      if ('{};[]'.includes(c)) { toks.push({ t: c }); i++; continue; }
+      if ('{};[]'.includes(c)) { toks.push({ t: c, ln }); i++; continue; }
       if (c === '"') {
-        let j = i + 1, v = '';
-        while (j < s.length && s[j] !== '"') { if (s[j] === '\\' && j + 1 < s.length) { v += s[j + 1]; j += 2; continue; } v += s[j]; j++; }
-        toks.push({ w: v, q: true }); i = j + 1; continue;
+        let j = i + 1, v = ''; const start = ln;
+        while (j < s.length && s[j] !== '"') { if (s[j] === '\n') { ln++; } if (s[j] === '\\' && j + 1 < s.length) { v += s[j + 1]; j += 2; continue; } v += s[j]; j++; }
+        if (j >= s.length) issues.push({ sev: 'err', msg: `Guillemet ouvert ligne ${start} jamais refermé : la suite de la configuration est mal lue.` });
+        toks.push({ w: v, q: true, ln: start }); i = j + 1; continue;
       }
       let j = i; while (j < s.length && !/[\s{};[\]"]/.test(s[j])) j++;
-      toks.push({ w: s.slice(i, j) }); i = j;
+      toks.push({ w: s.slice(i, j), ln }); i = j;
     }
     const out = [], stack = []; let cur = [], list = null;
     const fmt = w => (w.q || /\s/.test(w.w) || w.w === '') ? '"' + w.w + '"' : w.w;
+    const text1 = arr => arr.map(x => x.list ? '[ … ]' : fmt(x)).join(' ');
     const stripPrefixes = () => {
       let inact = false;
       while (cur.length && cur[0].w && /^(inactive|protect|replace|delete):$/.test(cur[0].w)) { if (cur[0].w === 'inactive:') inact = true; cur.shift(); }
       return inact;
     };
+    const emit = () => {
+      const inact = stripPrefixes();
+      if (!cur.length) return;
+      const anyInactive = inact || stack.some(x => x.inactive);
+      const prefix = stack.map(x => x.words).filter(Boolean).join(' ');
+      const li = cur.findIndex(x => x.list);
+      const variants = li >= 0 ? cur[li].list.map(v => [...cur.slice(0, li), v, ...cur.slice(li + 1)]) : [cur];
+      for (const v of variants) {
+        const line = ('set ' + prefix + ' ' + v.map(fmt).join(' ')).replace(/\s+/g, ' ').trim();
+        out.push(anyInactive ? '#inactive ' + line : line);
+      }
+    };
+    const multiLine = () => cur.length > 1 && cur[0].ln !== cur[cur.length - 1].ln && !cur.some(x => x.list);
     for (const k of toks) {
-      if (k.t === '[') { list = []; continue; }
-      if (k.t === ']') { cur.push({ list: list || [] }); list = null; continue; }
+      if (k.t === '[') { if (list) issues.push({ sev: 'err', msg: `Ligne ${k.ln} : crochet « [ » ouvert alors qu’une liste n’est pas refermée.` }); list = []; continue; }
+      if (k.t === ']') { if (!list) { issues.push({ sev: 'err', msg: `Ligne ${k.ln} : crochet « ] » sans crochet ouvrant.` }); continue; } cur.push({ list, ln: k.ln }); list = null; continue; }
       if (list && k.w !== undefined) { list.push(k); continue; }
-      if (k.t === '{') { const inact = stripPrefixes(); stack.push({ words: cur.map(fmt).join(' '), inactive: inact }); cur = []; continue; }
-      if (k.t === '}') { stack.pop(); cur = []; continue; }
+      if (list) { issues.push({ sev: 'err', msg: `Ligne ${k.ln} : liste « [ … » non refermée avant « ${k.t} ».` }); cur.push({ list, ln: k.ln }); list = null; }
+      if (k.t === '{') {
+        if (!cur.length) issues.push({ sev: 'err', msg: `Ligne ${k.ln} : accolade ouvrante sans nom de bloc.` });
+        else if (multiLine()) issues.push({ sev: 'err', msg: `Ligne ${cur[cur.length - 1].ln} : « ${text1(cur)} » s’étend sur plusieurs lignes, un point-virgule ou une accolade manque probablement ligne ${cur[0].ln}.` });
+        const inact = stripPrefixes(); stack.push({ words: cur.map(fmt).join(' '), inactive: inact, ln: k.ln }); cur = []; continue;
+      }
+      if (k.t === '}') {
+        if (cur.length) { issues.push({ sev: 'err', msg: `Ligne ${cur[cur.length - 1].ln} : point-virgule manquant après « ${text1(cur)} ».` }); emit(); cur = []; }
+        if (!stack.length) { issues.push({ sev: 'err', msg: `Ligne ${k.ln} : accolade fermante « } » en trop.` }); continue; }
+        stack.pop(); continue;
+      }
       if (k.t === ';') {
-        const inact = stripPrefixes();
-        if (cur.length) {
-          const anyInactive = inact || stack.some(x => x.inactive);
-          const prefix = stack.map(x => x.words).filter(Boolean).join(' ');
-          const li = cur.findIndex(x => x.list);
-          const variants = li >= 0 ? cur[li].list.map(v => [...cur.slice(0, li), v, ...cur.slice(li + 1)]) : [cur];
-          for (const v of variants) {
-            const line = ('set ' + prefix + ' ' + v.map(fmt).join(' ')).replace(/\s+/g, ' ').trim();
-            out.push(anyInactive ? '#inactive ' + line : line);
-          }
-        }
-        cur = []; continue;
+        if (multiLine()) issues.push({ sev: 'err', msg: `Ligne ${cur[cur.length - 1].ln} : « ${text1(cur)} » s’étend sur plusieurs lignes, un point-virgule manque probablement ligne ${cur[0].ln}.` });
+        emit(); cur = []; continue;
       }
       cur.push(k);
     }
+    if (list) issues.push({ sev: 'err', msg: 'Liste « [ … » jamais refermée en fin de configuration.' });
+    if (cur.length) { issues.push({ sev: 'err', msg: `Fin de configuration : « ${text1(cur)} » n’est terminé ni par un point-virgule ni par une accolade.` }); emit(); }
+    if (stack.length) issues.push({ sev: 'err', msg: `${stack.length} accolade(s) jamais refermée(s) (bloc « ${stack[stack.length - 1].words || '?'} » ouvert ligne ${stack[stack.length - 1].ln}) : la fin de la configuration est rattachée au mauvais bloc.` });
+    out.issues = issues;
     return out;
   }
-  function junosLines(text) {
+
+  /* Captures de terminal : BOM, bannière « --- JUNOS … », invite « user@hôte> », {master} */
+  function cleanCapture(text) {
+    return String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/)
+      .filter(l => !/^\s*-{3}\s*JUNOS\b/i.test(l) && !/^\s*\{(master|backup|primary|secondary|linecard)[^}]*\}\s*$/i.test(l) && !/^\s*[\w.+-]+@[\w.+-]+[>#%]/.test(l))
+      .join('\n');
+  }
+
+  /* ---------- Groupes de configuration : groups / apply-groups / apply-groups-except ----------
+   * Reproduit l'héritage Junos : les lignes d'un groupe appliqué à un niveau sont ajoutées sous ce niveau ;
+   * un joker <…> ne correspond qu'à des éléments réellement configurés ; une valeur explicite l'emporte
+   * sur une valeur héritée ; le groupe le plus spécifique puis le premier listé l'emporte. */
+  const isJGlob = t => /^<.+>$/.test(t);
+  const VALUE_KW = new Set(['mtu', 'speed', 'link-mode', 'interface-type', 'hello-interval', 'dead-interval', 'metric', 'key', 'minimum-interval',
+    'multiplier', 'bandwidth', 'description', 'encapsulation', 'shaping-rate', 'scheduler-map', 'type', 'peer-as', 'local-address', 'local-as',
+    'hold-time', 'ttl', 'site-identifier', 'interval', 'loss-threshold', 'priority', 'router-id', 'autonomous-system', 'instance-type',
+    'route-distinguisher', 'vrf-target', 'vrf-import', 'vrf-export', 'native-vlan-id', 'vlan-id', 'authentication-key', 'minimum-links',
+    'periodic', 'optimize-timer', 'idle-timeout', 'uid', 'class', 'timeout', 'host-name', 'time-zone', 'reference-bandwidth', 'preference']);
+  // Choix mutuellement exclusifs : une valeur explicite empêche d'hériter d'une autre option du même choix
+  const CHOICES = { authentication: ['md5', 'simple-password', 'keychain', 'authentication-key-chain'], 'interface-mode': ['access', 'trunk'], 'link-mode': ['full-duplex', 'half-duplex', 'automatic'] };
+  const SEP = '\u0001';
+  const quoteTok = w => (/\s/.test(w) || w === '') ? '"' + w + '"' : w;
+  function applyGroups(lines) {
+    const groups = new Map(), applies = [], excepts = [], base = [];
+    for (const l of lines) {
+      const t = tok(l);
+      if (t[0] !== 'set') { base.push(l); continue; }
+      if (t[1] === 'groups') { if (!groups.has(t[2])) groups.set(t[2], []); if (t.length > 3) groups.get(t[2]).push(t.slice(3)); continue; }
+      const k = t.indexOf('apply-groups'), ke = t.indexOf('apply-groups-except');
+      if (k > 0 && k === t.length - 2) { applies.push({ prefix: t.slice(1, k), name: t[k + 1], i: applies.length }); continue; }
+      if (ke > 0 && ke === t.length - 2) { excepts.push({ prefix: t.slice(1, ke), name: t[ke + 1] }); continue; }
+      base.push(l);
+    }
+    const baseT = base.filter(l => l.startsWith('set ')).map(l => tok(l).slice(1));
+    const have = new Set(baseT.map(t => t.join(SEP)));
+    const single = new Set(baseT.filter(t => t.length > 1 && VALUE_KW.has(t[t.length - 2])).map(t => t.slice(0, -1).join(SEP)));
+    const expand = (t, from) => {
+      const w = t.findIndex((x, j) => j >= from && isJGlob(x));
+      if (w < 0) return [t];
+      const vals = new Set();
+      for (const c of baseT) {
+        if (c.length <= w) continue;
+        let ok = true; for (let j = 0; j < w; j++) if (c[j] !== t[j]) { ok = false; break; }
+        if (ok && globMatch(t[w], c[w])) vals.add(c[w]);
+      }
+      const out = [];
+      for (const v of vals) { const n = t.slice(); n[w] = v; out.push(...expand(n, w + 1)); }
+      return out;
+    };
+    const applied = new Set(), unknown = [], out = [];
+    const sorted = applies.slice().sort((x, y) => y.prefix.length - x.prefix.length || x.i - y.i);
+    for (const a of sorted) {
+      const g = groups.get(a.name);
+      if (!g) { unknown.push(a.name); continue; }
+      applied.add(a.name);
+      for (const gl of g) {
+        if (gl.length <= a.prefix.length) continue;
+        let match = true;
+        for (let j = 0; j < a.prefix.length; j++) if (gl[j] !== a.prefix[j] && !(isJGlob(gl[j]) && globMatch(gl[j], a.prefix[j]))) { match = false; break; }
+        if (!match) continue;
+        for (const L of expand(a.prefix.concat(gl.slice(a.prefix.length)), a.prefix.length)) {
+          if (excepts.some(e => e.name === a.name && e.prefix.every((x, j) => L[j] === x))) continue;
+          const key = L.join(SEP), pre = L.slice(0, -1).join(SEP);
+          if (have.has(key)) continue;
+          if (L.length > 1 && VALUE_KW.has(L[L.length - 2]) && single.has(pre)) continue;
+          let clash = false;
+          for (let j = 1; j < L.length && !clash; j++) {
+            const opts = CHOICES[L[j - 1]];
+            if (!opts || !opts.includes(L[j])) continue;
+            clash = baseT.some(b => b.length > j && opts.includes(b[j]) && b[j] !== L[j] && b.slice(0, j).every((x, q) => x === L[q]));
+          }
+          if (clash) continue;
+          have.add(key); if (L.length > 1 && VALUE_KW.has(L[L.length - 2])) single.add(pre);
+          out.push('set ' + L.map(quoteTok).join(' '));
+        }
+      }
+    }
+    return { lines: base.concat(out), defined: [...groups.keys()], applied: [...applied], unknown, inherited: out.length };
+  }
+
+  function junosLines(text, opts) {
+    text = cleanCapture(text);
     const raw = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const setCount = raw.filter(l => /^(set|deactivate) /.test(l)).length;
     const isSet = setCount > 0 && setCount >= raw.filter(l => !l.startsWith('#')).length * 0.5;
-    const lines = isSet ? raw.filter(l => /^(set|deactivate) /.test(l)) : junosToSet(text);
+    const conv = isSet ? null : junosToSet(text);
+    const lines = isSet ? raw.filter(l => /^(set|deactivate) /.test(l)) : conv;
+    const structIssues = conv ? conv.issues : [];
+    if (isSet) raw.forEach((l, n) => { if (!/^(set|deactivate|delete|#)/.test(l) && !/^\s*$/.test(l)) structIssues.push({ sev: 'err', msg: `Ligne ${n + 1} ignorée, elle ne commence ni par « set » ni par « deactivate » : « ${l.slice(0, 80)} ».` }); });
     const deact = lines.filter(l => l.startsWith('deactivate ')).map(l => 'set ' + l.slice(11));
     const res = [], inactive = [];
     for (const l of lines) {
@@ -560,11 +760,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
       if (deact.some(d => l === d || l.startsWith(d + ' '))) { inactive.push(l); continue; }
       res.push(l);
     }
-    return { lines: res, inactive, format: isSet ? 'set' : 'hiérarchique' };
+    if (opts && opts.raw) return { lines: res, inactive, format: isSet ? 'set' : 'hiérarchique', issues: structIssues };
+    const g = applyGroups(res);
+    return { lines: g.lines, inactive, format: isSet ? 'set' : 'hiérarchique', groups: g, issues: structIssues };
   }
   const normJIf = n => (!n || n === 'all' || n.includes('.')) ? n : n + '.0';
   function normJFam(f, s) {
-    const m = { 'inet-vpn': 'vpnv4', 'inet6-vpn': 'vpnv6', evpn: 'evpn', l2vpn: 'l2vpn', 'route-target': 'rtc', 'inet-mvpn': 'mvpn', 'inet6-mvpn': 'mvpn6' };
+    const m = { 'inet-vpn': 'vpnv4', 'inet6-vpn': 'vpnv6', evpn: 'evpn', l2vpn: 'l2vpn', 'route-target': 'rtc', 'inet-mvpn': 'mvpn', 'inet6-mvpn': 'mvpn6', 'traffic-engineering': 'bgp-te', 'inet-vpn-flow': 'flowspec-vpn' };
     if (m[f]) return m[f];
     if (f === 'inet') return s === 'labeled-unicast' ? 'ipv4-labeled' : s === 'flow' ? 'flowspec' : s === 'multicast' ? 'ipv4-multicast' : 'ipv4-unicast';
     if (f === 'inet6') return s === 'labeled-unicast' ? 'ipv6-labeled' : s === 'flow' ? 'flowspec-v6' : 'ipv6-unicast';
@@ -573,24 +775,41 @@ td.off{text-decoration:line-through;color:var(--muted)}
 
   function parseJunos(text) {
     const dev = newDev('junos');
-    const { lines, inactive, format } = junosLines(text);
+    const { lines, inactive, format, groups: G, issues: structIssues } = junosLines(text);
     dev.format = format;
+    for (const x of structIssues || []) issue(dev, x.sev, x.msg);
+    dev.groups = { defined: G.defined, applied: G.applied, unused: G.defined.filter(n => !G.applied.includes(n)), inherited: G.inherited };
+    if (G.applied.length) dev.notes.push({ sev: 'info', msg: `Groupes de configuration dépliés (${G.applied.join(', ')}) : ${G.inherited} ligne(s) héritée(s) prises en compte.` });
+    if (G.unknown.length) dev.notes.push({ sev: 'warn', msg: `apply-groups vers un groupe inexistant : ${G.unknown.join(', ')}.` });
     if (inactive.length) dev.notes.push({ sev: 'info', msg: `${inactive.length} ligne(s) désactivée(s) (inactive / deactivate) ignorée(s).` });
-    const groups = new Set(), bgpGroups = {}, bgpGlob = {};
-    let applyGroups = false;
+    const bgpGroups = {}, bgpGlob = {}, pol = { comm: new Map(), stmt: new Map() };
     for (const line of lines) {
       let t = tok(line); if (t[0] !== 'set') continue; t = t.slice(1);
-      if (t[0] === 'groups') { groups.add(t[1]); continue; }
-      if (t.includes('apply-groups')) applyGroups = true;
       if (t[0] === 'logical-systems') t = t.slice(2);
       let vrf = null;
       if (t[0] === 'routing-instances') {
-        vrf = t[1]; dev.vrfs.add(vrf); t = t.slice(2);
-        if (t[0] === 'interface') { getIf(dev, normJIf(t[1])).vrf = vrf; continue; }
+        vrf = t[1]; if (!vrf || vrf === 'apply-groups') continue;
+        dev.vrfs.add(vrf); t = t.slice(2);
+        const I = getInst(dev, vrf);
+        if (t[0] === 'interface') { getIf(dev, normJIf(t[1])).vrf = vrf; I.ifaces.push(normJIf(t[1])); continue; }
+        if (t[0] === 'instance-type') { I.type = t[1]; continue; }
+        if (t[0] === 'route-distinguisher') { I.rd = t[1]; continue; }
+        if (t[0] === 'vrf-target') { if (t[1] === 'import') I.rtImport.add(t[2]); else if (t[1] === 'export') I.rtExport.add(t[2]); else { I.rtImport.add(t[1]); I.rtExport.add(t[1]); } continue; }
+        if (t[0] === 'vrf-import') { I.importPol.push(t[1]); continue; }
+        if (t[0] === 'vrf-export') { I.exportPol.push(t[1]); continue; }
+        if (t[0] === 'vlan-id') { I.vlanId = t[1]; continue; }
+        if (t[0] === 'protocols' && t[1] === 'vpls' && t[2] === 'site') { let st = I.sites.find(x => x.name === t[3]); if (!st) { st = { name: t[3], id: null }; I.sites.push(st); } if (t[4] === 'site-identifier') st.id = t[5]; continue; }
       }
+      if (t[0] === 'policy-options') { jPolicy(pol, t); continue; }
       jStatement(dev, t, vrf, bgpGroups, bgpGlob);
     }
-    if (groups.size || applyGroups) dev.notes.push({ sev: 'info', msg: `Groupes de configuration (${[...groups].join(', ') || 'apply-groups'}) non dépliés : collez plutôt la sortie de « show configuration | display inheritance | display set ».` });
+    // Route-targets des services : vrf-target, ou communautés citées par les politiques vrf-import / vrf-export
+    for (const I of dev.instances.values()) {
+      const members = n => pol.comm.get(n) || [];
+      for (const p of I.importPol) for (const c of (pol.stmt.get(p) || { from: new Set() }).from) members(c).forEach(m => I.rtImport.add(m));
+      for (const p of I.exportPol) for (const c of (pol.stmt.get(p) || { add: new Set() }).add) members(c).forEach(m => I.rtExport.add(m));
+    }
+    dev.sys.policies = [...pol.stmt.keys()].sort();
     // BGP : héritage global > groupe > voisin
     for (const g of Object.values(bgpGroups)) {
       const G = bgpGlob[g.vrf || ''] || {};
@@ -619,13 +838,296 @@ td.off{text-decoration:line-through;color:var(--muted)}
     }
     // NET IS-IS
     for (const i of dev.ifs.values()) for (const a of i.isoAddr) dev.isis.nets.push(a);
+    validateJunos(dev, lines);
+    dev.objects = junosObjects(lines);
     if (dev.lldp.enabled === null) dev.lldp.enabled = false;
     return dev;
   }
 
+  /* ---------- Validation : valeurs hors limites, mots-clés inconnus, références à des interfaces absentes ----------
+   * Junos refuserait ces configurations au commit ; ici on les signale au lieu de les ignorer. */
+  const KW = {
+    phys: 'description unit mtu disable enable vlan-tagging flexible-vlan-tagging stacked-vlan-tagging encapsulation speed link-mode gigether-options ether-options aggregated-ether-options native-vlan-id hold-time apply-groups apply-groups-except mac damping optics-options traps no-traps per-unit-scheduler hierarchical-scheduler esi auto-negotiation no-auto-negotiation flow-control no-flow-control loopback no-loopback gratuitous-arp-reply no-gratuitous-arp-reply no-gratuitous-arp-request link-degrade-monitor otn-options framing clocking mixed-rate-mode number-of-sub-ports interface-mode vlan-offload passive-monitor-mode accounting-profile shared-scheduler satop-options aggregated-sonet-options sonet-options fastether-options redundant-ether-options anchor-point',
+    unit: 'description vlan-id vlan-tags family disable enable encapsulation vlan-id-list vlan-id-range native-inner-vlan-id input-vlan-map output-vlan-map apply-groups apply-groups-except bandwidth proxy-arp traps no-traps mac peer-unit tunnel point-to-point multipoint accounting-profile alias demux-source demux-options layer2-policer esi interface-shared-with copy-tos-to-outer-ip-header dialer-options vci shaping arp-resp',
+    inet: 'address filter mtu sampling policer rpf-check no-redirects dhcp dhcp-client primary preferred unnumbered-address targeted-broadcast accounting simple-filter service destination-class-usage source-class-usage receive-options-packets receive-ttl-exceeded demux-source demux-destination arp-max-cache arp-new-hold-limit apply-groups apply-groups-except negotiate-address no-neighbor-learn kernel-forwarding-table-filter ipsec-sa nd6-max-cache dad-disable dhcpv6-client ipv6-duplicate-addr-detection-transmits mld no-dad-disable',
+    ospfIf: 'interface-type hello-interval dead-interval metric passive authentication bfd-liveness-detection priority retransmit-interval transit-delay ldp-synchronization link-protection node-link-protection te-metric disable no-advertise-adjacency-segment neighbor poll-interval flood-reduction demand-circuit no-neighbor-down-notification strict-bfd ipsec-sa apply-groups apply-groups-except topology post-convergence-lfa mtu secondary no-interface-state-traps dynamic-neighbors lsa-filter no-eligible-backup no-eligible-remote-backup interface-group',
+    bgp: 'type local-address peer-as local-as neighbor family authentication-key authentication-algorithm authentication-key-chain multihop hold-time export import cluster description bfd-liveness-detection passive advertise-inactive advertise-peer-as as-override damping keep log-updown multipath out-delay preference remove-private tcp-mss traceoptions vpn-apply-export local-preference metric-out graceful-restart apply-groups apply-groups-except allow no-advertise-peer-as mtu-discovery accept-remote-nexthop local-interface ipsec-sa outbound-route-filter egress-te unconfigured-peer-graceful-restart precision-timers advertise-external no-client-reflect shutdown idle-after-switch-over optimal-route-reflection forwarding-context bmp disable minimum-hold-time drop-path-attributes',
+    bgpFam: 'inet inet6 inet-vpn inet6-vpn l2vpn evpn route-target traffic-engineering inet-mvpn inet6-mvpn inet-mdt iso iso-vpn inet-labeled-unicast inet6-labeled-unicast inet-vpn-flow inet6-vpn-flow bgp-ls atomic-aggregate fabric',
+    instType: 'vrf vpls virtual-router virtual-switch l2vpn evpn mac-vrf forwarding no-forwarding layer2-control mpls-internet-multicast evpn-vpws l2backhaul-vpn mpls-forwarding'
+  };
+  for (const k of Object.keys(KW)) KW[k] = new Set(KW[k].split(' '));
+  const isArea = a => /^\d+$/.test(a) ? +a <= 4294967295 : /^(\d{1,3}\.){3}\d{1,3}$/.test(a) && a.split('.').every(x => +x <= 255);
+  const ifNameOk = n => /^([a-z]{2,4}-\d+\/\d+\/\d+(:\d+)?|ae\d+|lo\d+|irb|vlan|fxp\d+|em\d+|me\d+|vme|reth\d+|st\d+|gr-[\d\/]+|lt-[\d\/]+|ip-[\d\/]+|ps\d+|cbp\d+|pp\d+|vtep|dsc|esi|rlsq\d+|lsq-[\d\/]+|si-[\d\/]+|ms-[\d\/]+|mo-[\d\/]+|interface-range|traceoptions|<.*>|.*\*.*)$/.test(n);
+  // Mot qui ressemble à une adresse IPv4 (au moins trois groupes de chiffres séparés par des points, éventuellement vides)
+  const IPV4ISH = /^\d{1,3}(\.\d{0,3}){2,}(\/\d*)?$/;
+  const ownsIP = (dev, ip) => [...dev.ifs.values()].some(i => [...i.v4, ...i.v6].some(a => a.ip === ip));
+  const FC_DEFAULT = new Set(['best-effort', 'expedited-forwarding', 'assured-forwarding', 'network-control', 'be', 'ef', 'af', 'nc']);
+  const DSCP_ALIAS = /^(ef|be|cs[0-7]|af[1-4][1-3]|nc[12])$/;
+
+  /* Contrôles valables dans toute la configuration : adresses mal formées où qu'elles soient, adresses source
+   * qui n'appartiennent pas à l'équipement, objets cités mais jamais définis, valeurs de QoS et de ports. */
+  function validateGeneric(dev, lines, bad) {
+    const defs = { filter: new Set(), policy: new Set(), community: new Set(), prefixList: new Set(), smap: new Set(), sched: new Set(), drop: new Set(), fc: new Set(), lsp: new Set() };
+    const cls = new Set(), rw = new Set(), refs = [], smapSched = new Map(), schedPct = new Map();
+    const T = lines.filter(l => l.startsWith('set ')).map(l => tok(l).slice(1));
+    for (const t of T) {
+      const u = t[0] === 'routing-instances' ? t.slice(2) : t;
+      if (u[0] === 'firewall') { const k = u.indexOf('filter'); if (k >= 0 && u[k + 1]) defs.filter.add(u[k + 1]); }
+      if (u[0] === 'policy-options') {
+        if (u[1] === 'policy-statement') defs.policy.add(u[2]);
+        if (u[1] === 'community') defs.community.add(u[2]);
+        if (u[1] === 'prefix-list') defs.prefixList.add(u[2]);
+      }
+      if (u[0] === 'class-of-service') {
+        if (u[1] === 'scheduler-maps') defs.smap.add(u[2]);
+        if (u[1] === 'schedulers') defs.sched.add(u[2]);
+        if (u[1] === 'drop-profiles') defs.drop.add(u[2]);
+        if (u[1] === 'classifiers') cls.add(u[2] + ' ' + u[3]);
+        if (u[1] === 'rewrite-rules') rw.add(u[2] + ' ' + u[3]);
+        if (u[1] === 'forwarding-classes' && u[2] === 'queue') { defs.fc.add(u[4]); if (!isInt(u[3], 0, 15)) bad('err', `class-of-service : numéro de file « ${u[3]} » invalide.`); }
+        if (u[1] === 'forwarding-classes' && u[2] === 'class') defs.fc.add(u[3]);
+      }
+      if (u[0] === 'protocols' && u[1] === 'mpls' && u[2] === 'label-switched-path') defs.lsp.add(u[3]);
+    }
+    for (const t of T) {
+      const ctxOf = j => t.slice(0, j).join(' ');
+      // a. Adresses IPv4 mal formées, partout (les adresses d'interface sont déjà signalées à part)
+      const ifAddr = t[0] === 'interfaces' && t.includes('address') && t.includes('family');
+      for (let j = 0; j < t.length; j++) {
+        const w = t[j];
+        if (!IPV4ISH.test(w) || ifAddr) continue;
+        const [ip, len] = w.split('/');
+        if (v4int(ip) !== null && (len === undefined || isInt(len, 0, 32))) continue;
+        bad('err', `Adresse « ${w} » mal formée dans « ${ctxOf(j) || w} ».`);
+      }
+      // b. Adresse source qui doit appartenir à l'équipement
+      const k = t.indexOf('source-address');
+      if (k > 0 && t[k + 1] && t[0] !== 'firewall' && t[0] !== 'policy-options' && !t.includes('from')) {
+        const v = t[k + 1];
+        if (isIP(v)) { if (!ownsIP(dev, v)) bad('err', `« ${ctxOf(k)} » : source-address ${v} n’est configurée sur aucune interface de l’équipement, les paquets ne pourront pas partir avec cette adresse.`); }
+        else if (!IPV4ISH.test(v) && !dev.ifs.has(v) && !dev.ifs.has(v + '.0')) bad('warn', `« ${ctxOf(k)} » : source-address « ${v} » n’est ni une adresse ni une interface connue.`);
+      }
+      // c. Références à des objets
+      const u = t[0] === 'routing-instances' ? t.slice(2) : t, pre = t[0] === 'routing-instances' ? `instance ${t[1]} : ` : '';
+      const ref = (kind, n, where) => { if (n && !/^[(!&|]/.test(n) && !n.includes('&&') && !n.includes('||')) refs.push([kind, n, pre + where]); };
+      if (u[0] === 'interfaces') { const f = u.indexOf('filter'); if (f > 0 && /^(input|output|input-list|output-list)$/.test(u[f + 1] || '')) ref('filter', u[f + 2], `filtre de ${u[1]}${u[2] === 'unit' ? '.' + u[3] : ''}`); }
+      if (u[0] === 'vrf-import' || u[0] === 'vrf-export') ref('policy', u[1], u[0]);
+      for (const kw of ['import', 'export']) {
+        const j = u.indexOf(kw);
+        if (j > 0 && ['protocols', 'routing-options'].includes(u[0]) && u[j + 1] && !['target', 'policy', 'rib', 'rib-group'].includes(u[j + 1]) && !(u[j + 1] || '').startsWith('target:')) ref('policy', u[j + 1], ctxOf(j + (t.length - u.length)));
+        if (j > 0 && u[j + 1] === 'policy') ref('policy', u[j + 2], ctxOf(j + (t.length - u.length)));
+      }
+      if (u[0] === 'policy-options' && u[1] === 'policy-statement') {
+        const c = u.indexOf('community'); if (c > 0) for (const n of u.slice(c + 1)) if (!/^(add|set|delete)$/.test(n)) ref('community', n, `politique ${u[2]}`);
+        for (const kw of ['prefix-list', 'prefix-list-filter']) { const j = u.indexOf(kw); if (j > 2) ref('prefixList', u[j + 1], `politique ${u[2]}`); }
+      }
+      if (u[0] === 'firewall') {
+        for (const kw of ['source-prefix-list', 'destination-prefix-list', 'prefix-list']) { const j = u.indexOf(kw); if (j > 0) ref('prefixList', u[j + 1], `filtre ${u[u.indexOf('filter') + 1]}`); }
+        const fcI = u.indexOf('forwarding-class'); if (fcI > 0) ref('fc', u[fcI + 1], `filtre ${u[u.indexOf('filter') + 1]}`);
+        for (const kw of ['port', 'destination-port', 'source-port']) { const j = u.indexOf(kw); if (j > 0 && u[j + 1] && /^[\d-]+$/.test(u[j + 1])) for (const p of u[j + 1].split('-')) if (!isInt(p, 0, 65535)) bad('err', `Filtre ${u[u.indexOf('filter') + 1]} : port « ${u[j + 1]} » invalide (0 à 65535).`); }
+      }
+      if (u[0] === 'class-of-service') {
+        if (u[1] === 'interfaces') {
+          const sm = u.indexOf('scheduler-map'); if (sm > 0) ref('smap', u[sm + 1], `QoS de ${u[2]}`);
+          for (const kw of ['classifiers', 'rewrite-rules']) { const j = u.indexOf(kw); if (j > 0 && u[j + 2] && u[j + 2] !== 'default') { const key = u[j + 1] + ' ' + u[j + 2]; if (!(kw === 'classifiers' ? cls : rw).has(key)) bad('err', `QoS de ${u[2]} : ${kw === 'classifiers' ? 'classifieur' : 'règle de marquage'} « ${key} » jamais défini(e) : Junos refuserait le commit.`); } }
+          if (u.includes('shaping-rate') && !isRate(u[u.indexOf('shaping-rate') + 1])) bad('err', `QoS de ${u[2]} : shaping-rate « ${u[u.indexOf('shaping-rate') + 1]} » invalide.`);
+        }
+        if (u[1] === 'scheduler-maps' && u[3] === 'forwarding-class') { ref('fc', u[4], `scheduler-map ${u[2]}`); if (u[5] === 'scheduler') { ref('sched', u[6], `scheduler-map ${u[2]}`); if (!smapSched.has(u[2])) smapSched.set(u[2], []); smapSched.get(u[2]).push(u[6]); } }
+        if ((u[1] === 'classifiers' || u[1] === 'rewrite-rules') && u[4] === 'forwarding-class') {
+          ref('fc', u[5], `${u[1] === 'classifiers' ? 'classifieur' : 'marquage'} ${u[3]}`);
+          const cp = u.indexOf(u[1] === 'classifiers' ? 'code-points' : 'code-point');
+          if (cp > 0) for (const v of u.slice(cp + 1)) {
+            const ok = u[2] === 'dscp' || u[2] === 'dscp-ipv6' ? (/^[01]{6}$/.test(v) || DSCP_ALIAS.test(v)) : /^[01]{3}$/.test(v) || /^(be|ef|af\d\d|cs\d|nc\d)$/.test(v);
+            if (!ok) bad('err', `${u[1] === 'classifiers' ? 'Classifieur' : 'Marquage'} ${u[2]} ${u[3]} : code-point « ${v} » invalide (${u[2].startsWith('dscp') ? '6' : '3'} bits attendus, par exemple ${u[2].startsWith('dscp') ? '101110' : '101'}).`);
+          }
+          const lp = u.indexOf('loss-priority'); if (lp > 0 && !/^(low|medium-low|medium-high|high)$/.test(u[lp + 1] || '')) bad('err', `${u[3]} : loss-priority « ${u[lp + 1]} » invalide.`);
+        }
+        if (u[1] === 'schedulers') {
+          const tr = u.indexOf('transmit-rate');
+          if (tr > 0 && u[tr + 1] === 'percent') { if (!isInt(u[tr + 2], 0, 100)) bad('err', `Scheduler ${u[2]} : transmit-rate « ${u[tr + 2]} % » invalide (0 à 100).`); else schedPct.set(u[2], +u[tr + 2]); }
+          if (u[3] === 'priority' && !/^(low|medium-low|medium-high|high|strict-high)$/.test(u[4] || '')) bad('err', `Scheduler ${u[2]} : priorité « ${u[4]} » invalide.`);
+          const dp = u.indexOf('drop-profile'); if (dp > 0 && u[dp - 1] !== 'drop-profile-map') ref('drop', u[dp + 1], `scheduler ${u[2]}`);
+          else if (dp > 0) ref('drop', u[dp + 1], `scheduler ${u[2]}`);
+        }
+        if (u[1] === 'drop-profiles' && (u.includes('fill-level') || u.includes('drop-probability'))) { const j = Math.max(u.indexOf('fill-level'), u.indexOf('drop-probability')); for (const v of u.slice(j + 1)) if (!isInt(v, 0, 100)) bad('err', `Drop-profile ${u[2]} : valeur « ${v} » invalide (0 à 100).`); }
+        if (u[1] === 'host-outbound-traffic' && u[2] === 'forwarding-class') ref('fc', u[3], 'host-outbound-traffic');
+      }
+      if (u[0] === 'routing-options' && u[1] === 'dynamic-tunnels') { const j = u.indexOf('label-switched-path-template'); if (j > 0 && u[j + 1] !== 'default-template') ref('lsp', u[j + 1], `tunnel dynamique ${u[2]}`); }
+    }
+    const LBL = { filter: 'filtre', policy: 'politique', community: 'communauté', prefixList: 'prefix-list', smap: 'scheduler-map', sched: 'scheduler', drop: 'drop-profile', fc: 'forwarding-class', lsp: 'modèle de LSP' };
+    for (const [kind, n, where] of refs) {
+      if (defs[kind].has(n) || (kind === 'fc' && FC_DEFAULT.has(n))) continue;
+      bad('err', `${where.replace(/^./, c => c.toUpperCase())} : ${LBL[kind]} « ${n} » jamais définie : faute de frappe ? Junos refuserait le commit.`);
+    }
+    for (const [m, list] of smapSched) { const sum = list.reduce((a, x) => a + (schedPct.get(x) || 0), 0); if (sum > 100) bad('warn', `Scheduler-map ${m} : la somme des transmit-rate atteint ${sum} % (plus de 100 %).`); }
+  }
+
+  /* Objets nommés (prefix-lists, filtres, politiques, QoS, serveurs…) : leur contenu normalisé sert à vérifier
+   * que deux équipements d'un même réseau utilisent bien les mêmes définitions. */
+  function junosObjects(lines) {
+    const obj = new Map();
+    // Chaque ligne a une identité (secrets décodés puis hachés, pour comparer) et un affichage (secrets masqués)
+    const SECRET_KW = new Set(['secret', 'authentication-key', 'encrypted-password', 'key', 'simple-password', 'password', 'ssh-rsa', 'ssh-ed25519', 'ssh-ecdsa', 'ssh-dss', 'pre-shared-key', 'ascii-text', 'hexadecimal']);
+    const put = (key, show, rest) => {
+      if (!obj.has(key)) obj.set(key, { show, lines: new Map() });
+      const id = rest.map((w, j) => SECRET_KW.has(rest[j - 1]) || /^\$9\$/.test(w) ? '#' + J9hash(/^\$9\$/.test(w) ? (J9.dec(w) || w) : w) : w).join(' ');
+      const disp = rest.map((w, j) => SECRET_KW.has(rest[j - 1]) || /^\$[1569]\$/.test(w) ? '•••' : w).join(' ');
+      obj.get(key).lines.set(id, disp);
+    };
+    for (const l of lines) {
+      if (!l.startsWith('set ')) continue;
+      const t = tok(l).slice(1);
+      if (t[0] === 'policy-options' && ['prefix-list', 'policy-statement', 'community'].includes(t[1]) && t[2]) put(`${t[1]} ${t[2]}`, `${t[1]} ${t[2]}`, t.slice(3));
+      else if (t[0] === 'firewall') { const k = t.indexOf('filter'); if (k > 0 && t[k + 1]) put(`filter ${t[k + 1]}`, `filtre ${t[k + 1]}`, t.slice(k + 2)); }
+      else if (t[0] === 'class-of-service' && ['classifiers', 'rewrite-rules'].includes(t[1]) && t[3]) put(`${t[1]} ${t[2]} ${t[3]}`, `${t[1]} ${t[2]} ${t[3]}`, t.slice(4));
+      else if (t[0] === 'class-of-service' && ['schedulers', 'scheduler-maps', 'drop-profiles'].includes(t[1]) && t[2]) put(`${t[1]} ${t[2]}`, `${t[1]} ${t[2]}`, t.slice(3));
+      else if (t[0] === 'class-of-service' && ['forwarding-classes', 'host-outbound-traffic'].includes(t[1])) put(t[1], t[1], t.slice(2));
+      else if (t[0] === 'system' && t[1] === 'syslog' && (t[2] === 'host' || t[2] === 'file') && t[3]) put(`syslog ${t[2]} ${t[3]}`, `syslog ${t[2]} ${t[3]}`, t.slice(4));
+      else if (t[0] === 'system' && t[1] === 'syslog' && t[2] && t[2] !== 'source-address') put('syslog', 'syslog (général)', t.slice(2));
+      else if (t[0] === 'system' && t[1] === 'radius-server' && t[2] && t[3] !== 'source-address') put(`radius-server ${t[2]}`, `serveur RADIUS ${t[2]}`, t.slice(3));
+      else if (t[0] === 'system' && t[1] === 'login' && (t[2] === 'class' || t[2] === 'user') && t[3]) put(`login ${t[2]} ${t[3]}`, `${t[2] === 'class' ? 'classe' : 'utilisateur'} ${t[3]}`, t.slice(4));
+      else if (t[0] === 'system' && ['services', 'authentication-order', 'time-zone', 'name-server', 'domain-name'].includes(t[1])) put(`system ${t[1]}`, t[1], t.slice(2));
+      else if (t[0] === 'system' && t[1] === 'ntp') put('ntp', 'NTP', t.slice(2).filter(x => x !== 'source-address'));
+      else if (t[0] === 'snmp' && t[1] === 'community' && t[2]) put('snmp community #' + J9hash(t[2]), 'communauté SNMP (nom masqué)', t.slice(3));
+      else if (t[0] === 'snmp' && t[1] && t[1] !== 'community' && t[1] !== 'location' && t[1] !== 'contact') put('snmp ' + t[1], 'snmp ' + t[1], t.slice(2));
+      else if (t[0] === 'protocols' && t[1] === 'mpls' && t[2] === 'label-switched-path' && t[3]) put(`lsp ${t[3]}`, `LSP ${t[3]}`, t.slice(4));
+      else if (t[0] === 'routing-options' && t[1] === 'dynamic-tunnels' && t[2]) put(`dynamic-tunnels ${t[2]}`, `tunnel dynamique ${t[2]}`, t.slice(3));
+    }
+    return obj;
+  }
+  const J9hash = s => { let h = 5381; for (let k = 0; k < s.length; k++) h = ((h * 33) ^ s.charCodeAt(k)) >>> 0; return h.toString(36); };
+
+  function validateJunos(dev, lines) {
+    const bad = (sev, msg, ifn) => issue(dev, sev, msg, ifn);
+    const kw = (set, word, where) => { if (word && !set.has(word) && !/^</.test(word)) bad('warn', `Mot-clé « ${word} » inconnu sous « ${where} » : faute de frappe ? Junos refuserait cette ligne.`); };
+    const num = (v, min, max, what) => { if (!isInt(v, min, max)) bad('err', `${what} : valeur « ${v} » invalide (attendu un entier entre ${min} et ${max}).`); };
+    const refs = [];
+    for (const line of lines) {
+      let t = tok(line); if (t[0] !== 'set') continue; t = t.slice(1);
+      if (t[0] === 'logical-systems') t = t.slice(2);
+      let where = '';
+      if (t[0] === 'routing-instances' && t[1]) {
+        const n = t[1], r = t.slice(2); where = ` (instance ${n})`;
+        if (r[0] === 'instance-type' && !KW.instType.has(r[1])) bad('err', `Instance ${n} : type « ${r[1]} » inconnu.`);
+        if (r[0] === 'route-distinguisher' && !isRD(r[1])) bad('err', `Instance ${n} : route-distinguisher « ${r[1]} » mal formé (attendu AS:nn ou IP:nn).`);
+        if (r[0] === 'vrf-target') { const v = (r[1] === 'import' || r[1] === 'export') ? r[2] : r[1]; if (v && !isRT(v)) bad('err', `Instance ${n} : vrf-target « ${v} » mal formé (attendu target:AS:nn).`); }
+        if (r[0] === 'interface') refs.push([normJIf(r[1]), 'routing-instances ' + n]);
+        if (r[0] === 'vlan-id' && !/^(all|none)$/.test(r[1]) && !isInt(r[1], 1, 4094)) bad('err', `Instance ${n} : vlan-id « ${r[1]} » invalide.`);
+        const k = r.indexOf('site-identifier'); if (k >= 0) num(r[k + 1], 1, 65534, `Instance ${n}, site-identifier`);
+        t = r;
+      }
+      if (t[0] === 'interfaces' && t[1] && t[1] !== 'apply-groups' && t[1] !== 'interface-range') {
+        const n = t[1], r = t.slice(2);
+        if (!ifNameOk(n)) bad('warn', `Nom d’interface « ${n} » inhabituel : faute de frappe ?`);
+        if (r[0] === 'unit') {
+          if (!/^\d+$/.test(r[1] || '') && !/^</.test(r[1] || '') && r[1] !== '*') { bad('err', `${n} : numéro d’unité « ${r[1]} » invalide (attendu un nombre).`, n + '.' + r[1]); continue; }
+          const u = r.slice(2), un = n + '.' + r[1];
+          kw(KW.unit, u[0], `interfaces ${n} unit ${r[1]}`);
+          if (u[0] === 'vlan-id') num(u[1], 1, 4094, `${un}, vlan-id`);
+          if (u[0] === 'family' && (u[1] === 'inet' || u[1] === 'inet6')) {
+            kw(KW.inet, u[2], `${un} family ${u[1]}`);
+            if (u[2] === 'mtu') num(u[3], 64, 9500, `${un}, mtu`);
+            if (u[2] === 'address' && u[1] === 'inet' && String(u[3]).includes(':')) bad('err', `${un} : adresse IPv6 « ${u[3]} » sous family inet.`, un);
+            if (u[2] === 'address' && u[1] === 'inet6' && !String(u[3]).includes(':')) bad('err', `${un} : adresse IPv4 « ${u[3]} » sous family inet6.`, un);
+          }
+        } else if (r[0]) {
+          kw(KW.phys, r[0], `interfaces ${n}`);
+          if (r[0] === 'mtu') num(r[1], 256, 16000, `${n}, mtu`);
+          if (r[0] === 'native-vlan-id') num(r[1], 1, 4094, `${n}, native-vlan-id`);
+          if (r[0] === 'speed' && !/^(\d+(\.\d+)?[mg]|auto|auto-\d+[mg])$/i.test(r[1] || '')) bad('err', `${n} : vitesse « ${r[1]} » invalide (exemples : 100m, 1g, 10g).`);
+          if (r[0] === 'link-mode' && !/^(full-duplex|half-duplex|automatic)$/.test(r[1] || '')) bad('err', `${n} : link-mode « ${r[1]} » invalide.`);
+        }
+      }
+      if (t[0] === 'protocols') {
+        const p = t[1], r = t.slice(2);
+        if ((p === 'ospf' || p === 'ospf3') && r[0] === 'area') {
+          if (!isArea(r[1])) bad('err', `${p} : identifiant d’area « ${r[1]} » invalide${where}.`);
+          if (r[2] === 'interface') {
+            refs.push([normJIf(r[3]), `protocols ${p}`]);
+            const x = r.slice(4);
+            kw(KW.ospfIf, x[0], `${p} area ${r[1]} interface ${r[3]}`);
+            if (x[0] === 'metric') num(x[1], 1, 65535, `${p} ${r[3]}, metric`);
+            if (x[0] === 'hello-interval') num(x[1], 1, 255, `${p} ${r[3]}, hello-interval`);
+            if (x[0] === 'dead-interval') num(x[1], 1, 65535, `${p} ${r[3]}, dead-interval`);
+            if (x[0] === 'interface-type' && !/^(p2p|nbma|p2mp|p2mp-over-lan)$/.test(x[1] || '')) bad('err', `${p} ${r[3]} : interface-type « ${x[1]} » invalide (p2p, nbma, p2mp).`);
+            if (x[0] === 'authentication' && x[1] === 'md5') num(x[2], 0, 255, `${p} ${r[3]}, identifiant de clé MD5`);
+            if (x[0] === 'bfd-liveness-detection' && x[1] === 'minimum-interval') num(x[2], 1, 255000, `${p} ${r[3]}, BFD minimum-interval`);
+            if (x[0] === 'bfd-liveness-detection' && x[1] === 'multiplier') num(x[2], 1, 255, `${p} ${r[3]}, BFD multiplier`);
+          }
+        }
+        if (['isis', 'ldp', 'mpls', 'rsvp'].includes(p) && r[0] === 'interface' && r[1]) refs.push([normJIf(r[1]), `protocols ${p}`]);
+        if (p === 'lldp' && r[0] === 'interface' && r[1] && r[1] !== 'all') refs.push([r[1], 'protocols lldp']);
+        if (p === 'rsvp' && r[0] === 'interface' && r[2] === 'bandwidth' && !isRate(r[3])) bad('err', `rsvp ${r[1]} : bande passante « ${r[3]} » invalide (exemples : 100m, 1g).`);
+        if (p === 'bgp') {
+          let x = r, ctx = 'protocols bgp';
+          if (x[0] === 'group') { ctx = `bgp group ${x[1]}`; x = x.slice(2); }
+          if (x[0] === 'neighbor') { if (!isIP(x[1]) && !IPV4ISH.test(x[1])) bad('err', `${ctx} : adresse de voisin « ${x[1]} » invalide${where}.`); ctx += ` neighbor ${x[1]}`; x = x.slice(2); }
+          if (x.length) kw(KW.bgp, x[0], ctx);
+          if (x[0] === 'local-address' && !isIP(x[1]) && !IPV4ISH.test(x[1])) bad('err', `${ctx} : local-address « ${x[1]} » invalide.`);
+          if (x[0] === 'local-address' && isIP(x[1]) && !ownsIP(dev, x[1])) bad('err', `${ctx} : local-address ${x[1]} n’est configurée sur aucune interface de l’équipement : la session BGP ne peut pas s’établir.`);
+          if ((x[0] === 'peer-as' || x[0] === 'local-as') && !isAS(x[1])) bad('err', `${ctx} : ${x[0]} « ${x[1]} » invalide.`);
+          if (x[0] === 'type' && !/^(internal|external)$/.test(x[1] || '')) bad('err', `${ctx} : type « ${x[1]} » invalide (internal ou external).`);
+          if (x[0] === 'hold-time' && !(x[1] === '0' || isInt(x[1], 3, 65535))) bad('err', `${ctx} : hold-time « ${x[1]} » invalide (0 ou 3 à 65535).`);
+          if (x[0] === 'multihop' && x[1] === 'ttl') num(x[2], 1, 255, `${ctx}, multihop ttl`);
+          if (x[0] === 'family' && !KW.bgpFam.has(x[1])) bad('err', `${ctx} : famille « ${x[1]} » inconnue (faute de frappe ?) : Junos refuserait la configuration et la famille n’est pas négociée.`);
+        }
+      }
+      if (t[0] === 'routing-options' && !where) {
+        if (t[1] === 'router-id' && !isIPv4(t[2]) && !IPV4ISH.test(t[2])) bad('err', `routing-options : router-id « ${t[2]} » invalide (attendu une adresse IPv4).`);
+        if (t[1] === 'autonomous-system' && !isAS(t[2])) bad('err', `routing-options : autonomous-system « ${t[2]} » invalide.`);
+      }
+      if (t[0] === 'policy-options' && t[1] === 'community' && t[3] === 'members') for (const m of t.slice(4)) if (/^target:/.test(m) && !isRT(m)) bad('err', `Communauté ${t[2]} : membre « ${m} » mal formé (attendu target:AS:nn).`);
+      if (t[0] === 'class-of-service' && t[1] === 'interfaces' && t[2] && !t[2].includes('*')) refs.push([t[3] === 'unit' ? t[2] + '.' + t[4] : t[2], 'class-of-service']);
+    }
+    for (const [n, ctx] of refs) if (n && n !== 'all' && !n.includes('*') && !/^</.test(n) && !dev.ifs.has(n))
+      bad('warn', `${ctx} cite l’interface ${n}, qui n’existe pas dans « interfaces » : faute de frappe ou unité renumérotée ?`, n);
+    validateGeneric(dev, lines, bad);
+    // Adresses mal formées, doublons et chevauchements sur l'équipement lui-même
+    const seen = new Map();
+    for (const i of dev.ifs.values()) {
+      for (const b of i.badAddr || []) bad('err', `${i.name} : adresse « ${b} » mal formée, elle est ignorée (aucune adresse valide sur l’interface).`, i.name);
+      for (const a of [...i.v4, ...i.v6]) {
+        if (seen.has(a.ip) && seen.get(a.ip) !== i.name) bad('err', `L’adresse ${a.ip} est configurée deux fois sur l’équipement (${seen.get(a.ip)} et ${i.name}).`, i.name);
+        seen.set(a.ip, i.name);
+      }
+    }
+  }
+
+  function getInst(dev, n) {
+    if (!dev.instances.has(n)) dev.instances.set(n, { name: n, type: null, rd: null, rtImport: new Set(), rtExport: new Set(), importPol: [], exportPol: [], ifaces: [], sites: [], vlanId: null });
+    return dev.instances.get(n);
+  }
+  function jPolicy(pol, t) {
+    if (t[1] === 'community' && t[3] === 'members') { const l = pol.comm.get(t[2]) || []; l.push(...t.slice(4)); pol.comm.set(t[2], l); return; }
+    if (t[1] !== 'policy-statement') return;
+    const st = pol.stmt.get(t[2]) || { from: new Set(), add: new Set() }; pol.stmt.set(t[2], st);
+    const k = t.indexOf('community');
+    if (k < 0) return;
+    if (t[k - 1] === 'from') t.slice(k + 1).forEach(c => st.from.add(c));
+    if (t[k - 1] === 'then' && (t[k + 1] === 'add' || t[k + 1] === 'set')) t.slice(k + 2).forEach(c => st.add.add(c));
+  }
   function jStatement(dev, t, vrf, bgpGroups, bgpGlob) {
     const k = t[0];
-    if (k === 'system' && t[1] === 'host-name') { dev.hostname = t[2]; return; }
+    if (k === 'system') {
+      if (t[1] === 'host-name') dev.hostname = t[2];
+      else if (t[1] === 'ntp' && t[2] === 'server') { if (!dev.sys.ntp.includes(t[3])) dev.sys.ntp.push(t[3]); }
+      else if (t[1] === 'syslog' && t[2] === 'host') { if (!dev.sys.syslog.includes(t[3])) dev.sys.syslog.push(t[3]); }
+      else if (t[1] === 'radius-server') { if (!dev.sys.radius.includes(t[2])) dev.sys.radius.push(t[2]); }
+      else if (t[1] === 'time-zone') dev.sys.tz = t[2];
+      return;
+    }
+    if (k === 'snmp' && t[1] === 'community') { if (!dev.sys.snmp.includes(t[2])) dev.sys.snmp.push(t[2]); return; }
+    if (k === 'firewall') { const f = t.indexOf('filter'); if (f > 0 && t[f + 1] && !dev.sys.filters.includes(t[f + 1])) dev.sys.filters.push(t[f + 1]); return; }
+    if (k === 'class-of-service' && t[1] === 'interfaces' && t[2]) {
+      let key = t[2], r = t.slice(3);
+      if (r[0] === 'unit') { key = t[2] + '.' + r[1]; r = r.slice(2); }
+      const c = dev.cos.get(key) || { scheduler: null, shaping: null, classifiers: {}, rewrite: {} }; dev.cos.set(key, c);
+      if (r[0] === 'scheduler-map') c.scheduler = r[1];
+      else if (r[0] === 'shaping-rate') c.shaping = r[1];
+      else if (r[0] === 'classifiers' && r[1]) c.classifiers[r[1]] = r[2] || 'défaut';
+      else if (r[0] === 'rewrite-rules' && r[1]) c.rewrite[r[1]] = r[2] || 'défaut';
+      return;
+    }
     if (k === 'routing-options') {
       if (vrf) return;
       if (t[1] === 'router-id') dev.routerId = t[2];
@@ -638,6 +1140,8 @@ td.off{text-decoration:line-through;color:var(--muted)}
     const p = t[1], r = t.slice(2);
     if (p === 'ospf' || p === 'ospf3') {
       const O = p === 'ospf' ? dev.ospf : dev.ospf3;
+      if (p === 'ospf' && r[0] === 'traffic-engineering') dev.sys.ospfTE = true;
+      if (r[0] === 'reference-bandwidth') O.refBw = r[1];
       if (r[0] !== 'area') return;
       const area = normArea(r[1]);
       const ar = O.areas[area] = O.areas[area] || { type: 'normal' };
@@ -695,7 +1199,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
     }
     if (p === 'ldp' && r[0] === 'interface') { dev.ldp.add(normJIf(r[1])); return; }
     if (p === 'mpls' && r[0] === 'interface') { dev.mpls.add(normJIf(r[1])); return; }
-    if (p === 'rsvp' && r[0] === 'interface') { dev.rsvp.add(normJIf(r[1])); return; }
+    if (p === 'rsvp' && r[0] === 'interface') {
+      const ifn = normJIf(r[1]); dev.rsvp.add(ifn);
+      if (r[2] === 'bandwidth') dev.rsvpBw.set(ifn, r[3]);
+      if (r[2] === 'link-protection') dev.rsvpLP.add(ifn);
+      return;
+    }
+    if (p === 'mpls' && r[0] === 'label-switched-path' && r[1] && !dev.sys.lsps.includes(r[1])) { dev.sys.lsps.push(r[1]); return; }
     if (p === 'lldp') {
       if (r[0] === 'disable') dev.lldp.enabled = false;
       else {
@@ -745,6 +1255,9 @@ td.off{text-decoration:line-through;color:var(--muted)}
         case 'disable': u.disabled = true; break;
         case 'family': {
           const f = r[1], rr = r.slice(2);
+          if (rr[0] === 'filter' && (rr[1] === 'input' || rr[1] === 'output' || rr[1] === 'input-list' || rr[1] === 'output-list')) {
+            const k2 = rr[1].startsWith('input') ? 'filterIn' : 'filterOut'; u[k2] = (u[k2] ? u[k2] + ', ' : '') + rr[2];
+          }
           if (f === 'inet') { u.inet = true; if (rr[0] === 'address') addAddr(u, rr[1]); else if (rr[0] === 'mtu') u.ipMtu = +rr[1]; }
           else if (f === 'inet6') { u.inet6 = true; if (rr[0] === 'address') addAddr(u, rr[1]); }
           else if (f === 'iso') { u.iso = true; if (rr[0] === 'address') u.isoAddr.push(rr[1]); }
@@ -797,6 +1310,8 @@ td.off{text-decoration:line-through;color:var(--muted)}
     detect: detectJunos,
     parse: parseJunos,
     formatLabel: dev => 'Junos (' + dev.format + ')',
+    // Lignes normalisées pour la comparaison ligne à ligne (toujours au format display set)
+    lines: text => junosLines(text, { raw: true }).lines.map(l => { const t = tok(l); return { section: t.slice(1, 3).join(' '), text: l }; }),
     ipMtu(dev, i) {
       if (i.ipMtu) return { v: i.ipMtu, how: 'family inet mtu' };
       const p = phys(dev, i);
@@ -813,8 +1328,22 @@ td.off{text-decoration:line-through;color:var(--muted)}
     },
     mplsOf(dev, i) {
       const any = s => s.has(i.name) || (s.has('all') && i.kind === 'unit' && !i.loopback);
-      return { ldp: any(dev.ldp), mplsFamily: !!i.mpls, mplsProto: any(dev.mpls), rsvp: any(dev.rsvp) };
+      const rs = any(dev.rsvp);
+      return { ldp: any(dev.ldp), mplsFamily: !!i.mpls, mplsProto: any(dev.mpls), rsvp: rs,
+        rsvpBw: rs ? (dev.rsvpBw.get(i.name) || dev.rsvpBw.get('all') || null) : null, linkProtection: rs && (dev.rsvpLP.has(i.name) || dev.rsvpLP.has('all')) };
     },
+    // Qualité de service effective : niveau physique (nom exact ou motif « ge-1/1/* ») puis niveau unité
+    cosOf(dev, i) {
+      const p = phys(dev, i);
+      const res = { scheduler: null, shaping: null, classifiers: {}, rewrite: {} }; let any = false;
+      const merge = c => { any = true; res.scheduler = res.scheduler || c.scheduler; res.shaping = res.shaping || c.shaping; Object.assign(res.classifiers, c.classifiers); Object.assign(res.rewrite, c.rewrite); };
+      for (const [k, c] of dev.cos) {
+        if (k === i.name || (i.unit != null && globMatch(k, i.name))) merge(c);
+        else if (p && (k === p.name || (!k.includes('.') && globMatch(k, p.name)))) merge(c);
+      }
+      return any ? res : null;
+    },
+    lldpOn: (dev, p) => !!(dev.lldp.enabled && p && (dev.lldp.all || dev.lldp.ifs.has(p.name))),
     l2Profile(dev, p) {
       const units = [...dev.ifs.values()].filter(u => u.parent === p.name);
       let untagged = null; const tagged = new Set(); let mode = null;
@@ -866,7 +1395,7 @@ td.off{text-decoration:line-through;color:var(--muted)}
 /* Vis-à-vis : Constructeur : HPE Comware 7 */
 (function (V) {
   'use strict';
-  const { addAddr, allAddr, cwSecret, expandVlans, getIf, mapNet, maskLen, name, newDev, normArea, normSpeed, parse, phys, registerVendor, secret, tok, v4int, v6big } = V;
+  const { issue, isInt, isAS, isIP, validMask, addAddr, allAddr, cwSecret, expandVlans, getIf, mapNet, maskLen, name, newDev, normArea, normSpeed, parse, phys, registerVendor, secret, tok, v4int, v6big } = V;
 
   /* ---------- HPE Comware 7 ---------- */
   const CW_NAMES = [
@@ -940,7 +1469,30 @@ td.off{text-decoration:line-through;color:var(--muted)}
       else if (k === 'lldp' && t[1] === 'global' && t[2] === 'enable') dev.lldp.enabled = true;
       else if (k === 'undo' && t[1] === 'lldp' && t[2] === 'global') lldpUndo = true;
       else if (k === 'router' && t[1] === 'id') dev.routerId = t[2];
-      else if (k === 'ip' && t[1] === 'vpn-instance') dev.vrfs.add(t[2]);
+      else if (k === 'ip' && t[1] === 'vpn-instance') {
+        dev.vrfs.add(t[2]); const I = cwInst(dev, t[2]); I.type = 'vrf';
+        for (const c of n.children) {
+          const ct = tok(c.text);
+          if (ct[0] === 'route-distinguisher') I.rd = ct[1];
+          if (ct[0] === 'vpn-target') { const dir = ct[ct.length - 1]; ct.slice(1).filter(x => /:/.test(x)).forEach(rt => { const v = 'target:' + rt; if (dir !== 'export-extcommunity') I.rtImport.add(v); if (dir !== 'import-extcommunity') I.rtExport.add(v); }); }
+          if (ct[0] === 'address-family') for (const g of c.children) { const gt = tok(g.text); if (gt[0] === 'vpn-target') { const dir = gt[gt.length - 1]; gt.slice(1).filter(x => /:/.test(x)).forEach(rt => { const v = 'target:' + rt; if (dir !== 'export-extcommunity') I.rtImport.add(v); if (dir !== 'import-extcommunity') I.rtExport.add(v); }); } }
+        }
+      }
+      else if (k === 'vsi') {
+        const I = cwInst(dev, t[1]); I.type = 'vpls';
+        const walk = nodes => { for (const c of nodes) { const ct = tok(c.text);
+          if (ct[0] === 'route-distinguisher') I.rd = ct[1];
+          if (ct[0] === 'vpn-target') { const dir = ct[ct.length - 1]; ct.slice(1).filter(x => /:/.test(x)).forEach(rt => { const v = 'target:' + rt; if (dir !== 'export-extcommunity') I.rtImport.add(v); if (dir !== 'import-extcommunity') I.rtExport.add(v); }); }
+          if (ct[0] === 'site') I.sites.push({ name: 'site ' + ct[1], id: ct[1] });
+          walk(c.children); } };
+        walk(n.children);
+      }
+      else if (k === 'ntp-service' && t[1] === 'unicast-server') dev.sys.ntp.push(t[2]);
+      else if (k === 'info-center' && t[1] === 'loghost') dev.sys.syslog.push(t[2] === 'vpn-instance' ? t[4] : t[2]);
+      else if (k === 'snmp-agent' && t[1] === 'community') dev.sys.snmp.push(t[t.length - 1]);
+      else if (k === 'clock' && t[1] === 'timezone') dev.sys.tz = t.slice(2).join(' ');
+      else if (k === 'radius' && t[1] === 'scheme') { for (const c of n.children) { const ct = tok(c.text); if (ct[0] === 'primary' || ct[0] === 'secondary') dev.sys.radius.push(ct[2]); } }
+      else if (k === 'acl') dev.sys.filters.push(t.slice(1).join(' '));
     }
     dev.lldp.enabled = lldpUndo ? false : true;
     dev.lldp.all = !lldpUndo;
@@ -979,6 +1531,60 @@ td.off{text-decoration:line-through;color:var(--muted)}
         void ar;
       }
     }
+    for (const i of dev.ifs.values()) {
+      if (i.vrf && dev.instances.has(i.vrf)) dev.instances.get(i.vrf).ifaces.push(i.name);
+      if (i.vsi) { cwInst(dev, i.vsi).ifaces.push(i.name); i.vrf = i.vsi; }
+    }
+    // Objets nommés comparables d'un équipement à l'autre (secrets masqués) et contrôles sur tout le texte
+    const hash = x => { let h = 5381; for (let k = 0; k < x.length; k++) h = ((h * 33) ^ x.charCodeAt(k)) >>> 0; return h.toString(36); };
+    const SEC = new Set(['cipher', 'simple', 'hash', 'plain']);
+    const put = (key, show, text) => {
+      if (!dev.objects.has(key)) dev.objects.set(key, { show, lines: new Map() });
+      const w = tok(text);
+      dev.objects.get(key).lines.set(w.map((x, j) => SEC.has(w[j - 1]) ? '#' + hash(x) : x).join(' '), w.map((x, j) => SEC.has(w[j - 1]) ? '•••' : x).join(' '));
+    };
+    const flat = (nodes, pre) => nodes.flatMap(n => [pre + n.text, ...flat(n.children, pre + '  ')]);
+    const IPV4ISH = /^\d{1,3}(\.\d{0,3}){2,}(\/\d*)?$/;
+    for (const n of tree) {
+      const t = tok(n.text), k = t[0];
+      let key = null, show = null;
+      if (k === 'acl') { key = n.text; show = n.text; }
+      else if ((k === 'traffic' && (t[1] === 'classifier' || t[1] === 'behavior')) || (k === 'qos' && t[1] === 'policy')) { key = t.slice(0, 3).join(' '); show = key; }
+      else if (k === 'radius' && t[1] === 'scheme') { key = n.text; show = n.text; }
+      else if (k === 'route-policy') { key = `route-policy ${t[1]} node ${t[t.indexOf('node') + 1]}`; show = key; put(key, show, t.slice(2).join(' ')); }
+      else if (k === 'local-user') { key = `local-user ${t[1]}`; show = key; }
+      if (key) { for (const l of flat(n.children, '')) put(key, show, l.trim()); if (!n.children.length && k !== 'route-policy') put(key, show, ''); }
+      if (k === 'ip' && t[1] === 'prefix-list') put(`ip prefix-list ${t[2]}`, `prefix-list ${t[2]}`, t.slice(3).join(' '));
+      if (k === 'snmp-agent' && t[1] === 'community') { const nm = t[t.length - 1]; put('snmp community #' + hash(nm), 'communauté SNMP (nom masqué)', t.slice(2, -1).join(' ')); }
+      else if (k === 'snmp-agent') put('snmp-agent', 'snmp-agent', t.slice(1).join(' '));
+      if (k === 'ntp-service') put('ntp-service', 'ntp-service', t.slice(1).join(' '));
+      if (k === 'info-center') put('info-center', 'info-center', t.slice(1).join(' '));
+      if (k === 'clock') put('clock', 'clock', t.slice(1).join(' '));
+      // Adresses mal formées n'importe où, interfaces source inexistantes
+      const walk = (node, ctx) => {
+        const w = tok(node.text);
+        if (w[0] !== 'description' && !(w[0] === 'ip' && w[1] === 'address')) for (const x of w) {
+          if (!IPV4ISH.test(x)) continue;
+          const [ip, len] = x.split('/');
+          if (v4int(ip) === null || (len !== undefined && !isInt(len, 0, 32))) issue(dev, 'err', `Adresse « ${x} » mal formée dans « ${(ctx ? ctx + ' > ' : '') + node.text} ».`);
+        }
+        const si = w.indexOf('source');
+        if (si >= 0 && w[si + 1] && /^[A-Za-z]/.test(w[si + 1]) && ['ntp-service', 'info-center', 'snmp-agent', 'radius', 'hwtacacs', 'sflow'].some(p => node.text.startsWith(p) || (ctx || '').startsWith(p))) {
+          const nm = normCwIf(w.slice(si + 1).join('').replace(/^(interface)/i, ''));
+          if (/\d/.test(nm) && !dev.ifs.has(nm)) issue(dev, 'warn', `« ${node.text} » : interface source ${nm} inexistante.`);
+        }
+        for (const c of node.children) walk(c, (ctx ? ctx + ' > ' : '') + node.text);
+      };
+      walk(n, '');
+    }
+    // Adresses mal formées, doublons, références à des interfaces absentes
+    const seen = new Map();
+    for (const i of dev.ifs.values()) {
+      for (const b of i.badAddr || []) issue(dev, 'err', `${i.name} : adresse « ${b} » mal formée, elle est ignorée (aucune adresse valide sur l’interface).`, i.name);
+      for (const a of i.v4) { if (seen.has(a.ip) && seen.get(a.ip) !== i.name) issue(dev, 'err', `L’adresse ${a.ip} est configurée deux fois sur l’équipement (${seen.get(a.ip)} et ${i.name}).`, i.name); seen.set(a.ip, i.name); }
+    }
+    for (const P of [...dev.ospf.procs, ...dev.ospf3.procs]) for (const n of P.silent) if (n !== 'all' && !dev.ifs.has(n)) issue(dev, 'warn', `ospf ${P.proc} : silent-interface ${n} n’existe pas : faute de frappe ?`, n);
+    for (const n of dev.bgp.neighbors) if (n.connectIf && !dev.ifs.has(n.connectIf)) issue(dev, 'err', `BGP ${n.ip} : connect-interface ${n.connectIf} n’existe pas.`, n.connectIf);
     // IS-IS, MPLS
     for (const i of dev.ifs.values()) {
       if (i.mpls) dev.mpls.add(i.name);
@@ -989,6 +1595,10 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return dev;
   }
 
+  function cwInst(dev, n) {
+    if (!dev.instances.has(n)) dev.instances.set(n, { name: n, type: null, rd: null, rtImport: new Set(), rtExport: new Set(), importPol: [], exportPol: [], ifaces: [], sites: [], vlanId: null });
+    return dev.instances.get(n);
+  }
   function cwInterface(dev, name, children) {
     const i = getIf(dev, name); i.kind = cwKind(name);
     if (i.kind === 'sub') i.parent = name.replace(/\.\d+$/, '');
@@ -999,20 +1609,24 @@ td.off{text-decoration:line-through;color:var(--muted)}
       const t = tok(c.text); const a = t[0], b = t[1];
       if (a === 'description') i.desc = t.slice(1).join(' ');
       else if (a === 'ip' && b === 'address') {
-        if (!v4int(t[2])) continue;
-        const len = maskLen(t[3]) ?? (/^\d+$/.test(t[3] || '') ? +t[3] : 32);
+        if (t[2] === 'dhcp-alloc' || t[2] === 'unnumbered') continue;
+        const m = t[3];
+        const lenOk = m === undefined || (/^\d{1,2}$/.test(m) ? +m <= 32 : validMask(m));
+        if (v4int(t[2]) === null || !lenOk) { (i.badAddr = i.badAddr || []).push(t.slice(2, 4).join(' ')); continue; }
+        const len = m === undefined ? 32 : (/^\d{1,2}$/.test(m) ? +m : maskLen(m));
         i.v4.push({ fam: 4, ip: t[2], len, n: v4int(t[2]), sub: t[4] === 'sub' });
       }
       else if (a === 'ipv6' && b === 'address' && t[2]) { if (/link-local/.test(c.text)) continue; addAddr(i, t[2].includes('/') ? t[2] : t[2] + '/' + (t[3] || 128)); }
       else if (a === 'ip' && b === 'binding' && t[2] === 'vpn-instance') i.vrf = t[3];
-      else if (a === 'mtu') i.mtu = +b;
+      else if (a === 'mtu') { i.mtu = +b; if (!isInt(b, 128, 10240)) issue(dev, 'err', `${name} : mtu « ${b} » invalide.`, name); }
       else if (a === 'ip' && b === 'mtu') i.ipMtu = +t[2];
       else if (a === 'jumboframe' && b === 'enable') i.jumbo = t[2] ? +t[2] : true;
       else if (a === 'shutdown') i.disabled = true;
       else if (a === 'port' && b === 'link-mode') i.linkMode = t[2];
       else if (a === 'port' && b === 'link-type') i.linkType = t[2];
-      else if (a === 'port' && b === 'access' && t[2] === 'vlan') i.accessVlan = +t[3];
-      else if (a === 'port' && b === 'trunk' && t[2] === 'permit' && t[3] === 'vlan') {
+      else if (a === 'port' && b === 'access' && t[2] === 'vlan') { i.accessVlan = +t[3]; if (!isInt(t[3], 1, 4094)) issue(dev, 'err', `${name} : VLAN d’accès « ${t[3]} » invalide (1 à 4094).`, name); }
+      else if (a === 'port' && b === 'trunk' && t[2] === 'permit' && t[3] === 'vlan' && t.slice(4).some(x => x !== 'to' && x !== 'all' && !isInt(x, 1, 4094))) issue(dev, 'err', `${name} : liste de VLAN « ${t.slice(4).join(' ')} » invalide.`, name);
+      if (a === 'port' && b === 'trunk' && t[2] === 'permit' && t[3] === 'vlan') {
         i.trunkPermit = i.trunkPermit || new Set([1]);
         if (t[4] === 'all') i.trunkAll = true; else expandVlans(t.slice(4)).forEach(v => i.trunkPermit.add(v));
       }
@@ -1034,11 +1648,11 @@ td.off{text-decoration:line-through;color:var(--muted)}
       else if (a === 'vlan-type' && b === 'dot1q' && t[2] === 'vid') i.vlanId = +t[3];
       else if (a === 'ospf' || a === 'ospfv3') {
         const C = a === 'ospf' ? oc : o3;
-        if (/^\d+$/.test(b) && t[2] === 'area') { C.proc = b; C.area = normArea(t[3]); }
+        if (/^\d+$/.test(b) && t[2] === 'area') { C.proc = b; C.area = normArea(t[3]); if (!/^(\d+|(\d{1,3}\.){3}\d{1,3})$/.test(t[3] || '')) issue(dev, 'err', `${name} : area OSPF « ${t[3]} » invalide.`, name); }
         else if (b === 'network-type') C.network = mapNet(t[2]);
-        else if (b === 'timer' && t[2] === 'hello') C.hello = +t[3];
-        else if (b === 'timer' && t[2] === 'dead') C.dead = +t[3];
-        else if (b === 'cost') C.cost = +t[2];
+        else if (b === 'timer' && t[2] === 'hello') { C.hello = +t[3]; if (!isInt(t[3], 1, 65535)) issue(dev, 'err', `${name} : timer hello « ${t[3]} » invalide.`, name); }
+        else if (b === 'timer' && t[2] === 'dead') { C.dead = +t[3]; if (!isInt(t[3], 1, 2147483647)) issue(dev, 'err', `${name} : timer dead « ${t[3]} » invalide.`, name); }
+        else if (b === 'cost') { C.cost = +t[2]; if (!isInt(t[2], 1, 65535)) issue(dev, 'err', `${name} : coût OSPF « ${t[2]} » invalide.`, name); }
         else if (b === 'authentication-mode') C.auth = cwAuth(t, 2);
         else if (b === 'bfd' && t[2] === 'enable') C.bfd = C.bfd || {};
         else if (b === 'mtu-enable') C.mtuEnable = true;
@@ -1058,6 +1672,12 @@ td.off{text-decoration:line-through;color:var(--muted)}
       else if (a === 'bfd' && b === 'min-transmit-interval') { i.bfdT = i.bfdT || {}; i.bfdT.min = +t[2]; }
       else if (a === 'bfd' && b === 'detect-multiplier') { i.bfdT = i.bfdT || {}; i.bfdT.mult = +t[2]; }
       else if (a === 'undo' && b === 'lldp' && t[2] === 'enable') i.lldpOff = true;
+      else if (a === 'qos' && b === 'trust') { i.qos = i.qos || { classifiers: {}, rewrite: {} }; i.qos.classifiers[t[2] || 'dot1p'] = 'trust'; }
+      else if (a === 'qos' && b === 'apply' && t[2] === 'policy') { i.qos = i.qos || { classifiers: {}, rewrite: {} }; i.qos[t[4] === 'outbound' ? 'policyOut' : 'policyIn'] = t[3]; }
+      else if (a === 'qos' && b === 'lr') { i.qos = i.qos || { classifiers: {}, rewrite: {} }; const k = t.indexOf('cir'); i.qos.shaping = k > 0 ? t[k + 1] + ' kb/s' : 'oui'; }
+      else if (a === 'qos' && b === 'gts') { i.qos = i.qos || { classifiers: {}, rewrite: {} }; const k = t.indexOf('cir'); i.qos.shaping = k > 0 ? t[k + 1] + ' kb/s' : 'oui'; }
+      else if (a === 'packet-filter') { const name = t[1] === 'ipv6' ? t[2] : t[1]; const dir = t[t.length - 1]; i[dir === 'outbound' ? 'filterOut' : 'filterIn'] = name; }
+      else if (a === 'xconnect' && b === 'vsi') { i.vsi = t[2]; }
     }
     if (oc.bfd && i.bfdT) Object.assign(oc.bfd, i.bfdT);
     if (ic.bfd && i.bfdT) Object.assign(ic.bfd, i.bfdT);
@@ -1094,6 +1714,7 @@ td.off{text-decoration:line-through;color:var(--muted)}
   }
   function cwBgp(dev, t, children) {
     dev.bgp.as = t[1];
+    if (!isAS(t[1])) issue(dev, 'err', `bgp : numéro d’AS « ${t[1]} » invalide.`);
     const peers = {}; const glob = {};
     const P = (key, vrf) => { const k = (vrf || '') + '|' + key; return peers[k] = peers[k] || { key, vrf, families: new Set() }; };
     function walk(lines, vrf, af) {
@@ -1105,8 +1726,9 @@ td.off{text-decoration:line-through;color:var(--muted)}
         else if (ct[0] === 'peer') {
           const p = P(ct[1], vrf); const x = ct.slice(2);
           if (af) { if (x[0] === 'enable') p.families.add(af); continue; }
+          if (!p.isGroup && !isIP(ct[1]) && !Object.values(peers).some(q => q.isGroup && q.key === ct[1])) issue(dev, 'err', `BGP : voisin « ${ct[1]} » invalide (ni adresse IP ni groupe déclaré).`);
           switch (x[0]) {
-            case 'as-number': p.peerAs = x[1]; break;
+            case 'as-number': p.peerAs = x[1]; if (!isAS(x[1])) issue(dev, 'err', `BGP : as-number « ${x[1]} » invalide pour ${ct[1]}.`); break;
             case 'group': p.group = x[1]; if (x[2] === 'as-number') p.peerAs = x[3]; break;
             case 'connect-interface': p.connectIf = normCwIf(x[1]); break;
             case 'ebgp-max-hop': p.multihop = true; p.ttl = x[1] ? +x[1] : 64; break;
@@ -1154,6 +1776,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
     detect: detectComware,
     parse: parseComware,
     formatLabel: () => 'HPE Comware 7',
+    // Lignes normalisées : chaque commande précédée de son contexte (« interface X > ip address … »)
+    lines(text) {
+      const out = [];
+      const walk = (nodes, prefix, sec) => { for (const n of nodes) { const t = prefix ? prefix + ' > ' + n.text : n.text; out.push({ section: sec || n.text, text: t }); walk(n.children, t, sec || n.text); } };
+      walk(cwTree(text), '', null);
+      return out;
+    },
     ipMtu(dev, i) {
       if (i.ipMtu) return { v: i.ipMtu, how: 'ip mtu' };
       if (i.mtu) return { v: i.mtu, how: 'mtu' };
@@ -1168,7 +1797,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
       const levels = new Set(lvl(P.level).filter(l => cl.includes(l)));
       return { levels, p2p: !!c.p2p, passive: !!c.silent, auth: c.auth || null, bfd: c.bfd || null };
     },
-    mplsOf: (dev, i) => ({ ldp: !!i.ldp, mplsFamily: !!i.mpls, mplsProto: true, rsvp: !!i.rsvp, ldpGlobal: dev.ldpGlobal, lsrId: dev.lsrId }),
+    mplsOf: (dev, i) => ({ ldp: !!i.ldp, mplsFamily: !!i.mpls, mplsProto: true, rsvp: !!i.rsvp, ldpGlobal: dev.ldpGlobal, lsrId: dev.lsrId, rsvpBw: null, linkProtection: false }),
+    cosOf(dev, i) {
+      const q = i.qos || (i.parent && dev.ifs.get(i.parent) && dev.ifs.get(i.parent).qos);
+      if (!q) return null;
+      return { scheduler: [q.policyIn && 'in ' + q.policyIn, q.policyOut && 'out ' + q.policyOut].filter(Boolean).join(', ') || null, shaping: q.shaping || null, classifiers: q.classifiers || {}, rewrite: q.rewrite || {} };
+    },
+    lldpOn: (dev, p) => !!(dev.lldp.enabled && p && !p.lldpOff),
     l2Profile(dev, p) {
       if (p.lag && dev.ifs.get(p.lag)) p = dev.ifs.get(p.lag);
       if (p.linkMode === 'route' || /^Route-Aggregation/.test(p.name)) {
@@ -1231,6 +1866,8 @@ td.off{text-decoration:line-through;color:var(--muted)}
   const mplsOf = (dev, i) => adapter(dev).mplsOf(dev, i);
   const l2Profile = (dev, p) => p ? adapter(dev).l2Profile(dev, p) : null;
   const encapOf = (dev, i) => adapter(dev).encapOf(dev, i);
+  const cosOf = (dev, i) => (adapter(dev).cosOf ? adapter(dev).cosOf(dev, i) : null);
+  const lldpOn = (dev, p) => (adapter(dev).lldpOn ? adapter(dev).lldpOn(dev, p) : null);
   function ospfOf(dev, i, which) {
     const O = dev[which || 'ospf'];
     let c = O.ifs.get(i.name);
@@ -1293,20 +1930,21 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return { ip: null, how: 'adresse de l’interface de sortie (non déterminable)' };
   }
 
-  Object.assign(V, { ipMtu, isisOf, mplsOf, l2Profile, encapOf, ospfOf, lagOf, members, carriers, netParse, ownerOf, connectedIf, sourceIp });
+  Object.assign(V, { cosOf, lldpOn, ipMtu, isisOf, mplsOf, l2Profile, encapOf, ospfOf, lagOf, members, carriers, netParse, ownerOf, connectedIf, sourceIp });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
 /* Vis-à-vis : Contrôles par lien : adressage, MTU, VLAN, LACP, OSPF, IS-IS, MPLS */
 (function (V) {
   'use strict';
-  const { R, adapter, allAddr, carriers, cidr, cmpSecret, encapOf, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, l3Ifs, lagOf, lenMask, members, mplsOf, name, net4, netParse, ospfOf, phys, sameNet, v4str } = V;
+  const { l3Cfg, R, mentions, isMgmt, globMatch, cosOf, lldpOn, adapter, allAddr, carriers, cidr, cmpSecret, encapOf, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, l3Ifs, lagOf, lenMask, members, mplsOf, name, net4, netParse, ospfOf, phys, sameNet, v4str } = V;
 
   /* ---------- Résultats ---------- */
 
   function findLinks(A, B) {
     const links = [], seen = new Set();
-    for (const ia of l3Ifs(A)) for (const ib of l3Ifs(B)) {
+    const usable = D => l3Ifs(D).filter(i => !isMgmt(i) && !isMgmt(phys(D, i)));
+    for (const ia of usable(A)) for (const ib of usable(B)) {
       for (const x of allAddr(ia)) for (const y of allAddr(ib)) {
         if (x.fam !== y.fam) continue;
         const host = x.fam === 4 ? 32 : 128;
@@ -1326,17 +1964,50 @@ td.off{text-decoration:line-through;color:var(--muted)}
   function suggestPairs(A, B, existing) {
     const out = [];
     if (!A.hostname || !B.hostname) return out;
-    const has = (d, s) => d && s && d.toLowerCase().includes(s.toLowerCase());
-    const cands = d => [...d.ifs.values()].filter(i => (i.kind === 'phys' || i.kind === 'lag') && !i.lag && i.desc);
-    for (const ia of cands(A)) {
-      if (!has(ia.desc, B.hostname)) continue;
-      for (const ib of cands(B)) {
-        if (!has(ib.desc, A.hostname)) continue;
-        const ok = ifVariants(B, ib.name).some(v => ia.desc.toLowerCase().includes(v)) || ifVariants(A, ia.name).some(v => ib.desc.toLowerCase().includes(v));
-        if (!ok) continue;
-        if (existing.some(l => (phys(A, l.a) === ia && phys(B, l.b) === ib) || (l.a === ia && l.b === ib))) continue;
-        out.push({ a: ia, b: ib, how: 'description' });
-      }
+    const cands = d => [...d.ifs.values()].filter(i => (i.kind === 'phys' || i.kind === 'lag') && !i.lag && i.desc && !isMgmt(i));
+    const taken = (ia, ib) => existing.some(l => (phys(A, l.a) === ia && phys(B, l.b) === ib) || (l.a === ia && l.b === ib)) || out.some(o => o.a === ia || o.b === ib);
+    const ca = cands(A).filter(i => mentions(i.desc, B.hostname, A.hostname));
+    const cb = cands(B).filter(i => mentions(i.desc, A.hostname, B.hostname));
+    // 1. Chaque description cite l'autre équipement ET le nom d'interface d'en face
+    for (const ia of ca) for (const ib of cb) {
+      const ok = ifVariants(B, ib.name).some(v => ia.desc.toLowerCase().includes(v)) || ifVariants(A, ia.name).some(v => ib.desc.toLowerCase().includes(v));
+      if (ok && !taken(ia, ib)) out.push({ a: ia, b: ib, how: 'description' });
+    }
+    // 2. Un seul port de chaque côté cite l'autre équipement : c'est le lien
+    const fa = ca.filter(i => !existing.some(l => phys(A, l.a) === i) && !out.some(o => o.a === i));
+    const fb = cb.filter(i => !existing.some(l => phys(B, l.b) === i) && !out.some(o => o.b === i));
+    if (fa.length === 1 && fb.length === 1 && !taken(fa[0], fb[0])) out.push({ a: fa[0], b: fb[0], how: 'description' });
+    return out;
+  }
+
+  /* Liens probables : interfaces qui se font face (même VLAN, ports reliés, descriptions)
+   * mais dont l'adressage ne correspond pas. Sans cela, une IP erronée ferait disparaître le lien. */
+  function probableLinks(A, B, found) {
+    const usedA = new Set(found.map(l => l.a)), usedB = new Set(found.map(l => l.b));
+    const free = (D, used) => [...D.ifs.values()].filter(i => l3Cfg(i) && !used.has(i) && !i.loopback && i.kind !== 'loopback' && !isMgmt(i) && !isMgmt(phys(D, i)));
+    const fa = free(A, usedA), fb = free(B, usedB);
+    if (!fa.length || !fb.length) return [];
+    const desc = suggestPairs(A, B, []);
+    const cands = [];
+    for (const ia of fa) for (const ib of fb) {
+      let s = 0; const why = [];
+      const ea = encapOf(A, ia), eb = encapOf(B, ib);
+      const va = ea.tag ?? ea.vlanif ?? null, vb = eb.tag ?? eb.vlanif ?? null;
+      const pa = phys(A, ia), pb = phys(B, ib);
+      if (va != null && va === vb) { s += 3; why.push('même VLAN ' + va); }
+      else if (va != null && vb != null) s -= 2;
+      if (desc.some(p => p.a === pa && p.b === pb)) { s += 3; why.push('ports reliés par leurs descriptions'); }
+      else if (eb.vlanif != null && desc.some(p => p.a === pa && carriers(B, eb.vlanif).some(c => c.name === p.b.name))) { s += 2; why.push(`VLAN ${eb.vlanif} transporté par le port relié`); }
+      else if (ea.vlanif != null && desc.some(p => p.b === pb && carriers(A, ea.vlanif).some(c => c.name === p.a.name))) { s += 2; why.push(`VLAN ${ea.vlanif} transporté par le port relié`); }
+      if ((mentions(ia.desc, B.hostname, A.hostname) || mentions(pa && pa.desc, B.hostname, A.hostname)) && (mentions(ib.desc, A.hostname, B.hostname) || mentions(pb && pb.desc, A.hostname, B.hostname))) { s += 3; why.push('descriptions croisées'); }
+      if (ia.v4.some(x => ib.v4.some(y => net4(x.n, 24) === net4(y.n, 24)))) { s += 1; why.push('adresses voisines'); }
+      if (s >= 3) cands.push({ a: ia, b: ib, s, why });
+    }
+    cands.sort((x, y) => y.s - x.s);
+    const out = [], ua = new Set(), ub = new Set();
+    for (const c of cands) {
+      if (ua.has(c.a) || ub.has(c.b)) continue;
+      ua.add(c.a); ub.add(c.b); out.push({ a: c.a, b: c.b, how: 'probable', why: c.why });
     }
     return out;
   }
@@ -1345,15 +2016,24 @@ td.off{text-decoration:line-through;color:var(--muted)}
     const res = [];
     const nA = name(A), nB = name(B);
     // --- Adressage
+    const badA = ia.badAddr || [], badB = ib.badAddr || [];
+    if (badA.length || badB.length) res.push(R('Adressage', 'Adresse IP', 'err', badA.length ? `« ${badA.join(', ')} » mal formée` : allAddr(ia).map(cidr).join(', ') || 'aucune', badB.length ? `« ${badB.join(', ')} » mal formée` : allAddr(ib).map(cidr).join(', ') || 'aucune',
+      `Adresse mal formée côté ${badA.length ? nA : nB}${badA.length && badB.length ? ' et ' + nB : ''} : l’équipement la refuserait, l’interface n’a donc pas d’adresse et aucun protocole ne peut monter sur ce lien.`));
     for (const fam of [4, 6]) {
       const xs = fam === 4 ? ia.v4 : ia.v6, ys = fam === 4 ? ib.v4 : ib.v6;
       if (!xs.length && !ys.length) continue;
+      if ((!xs.length && badA.length) || (!ys.length && badB.length)) continue;
       const lab = fam === 4 ? 'Adresse IPv4' : 'Adresse IPv6';
       let pair = null;
       for (const x of xs) for (const y of ys) { const l = Math.min(x.len, y.len); if (!pair && sameNet(x, y, l)) pair = [x, y]; }
       if (!pair) {
-        if (xs.length && ys.length) res.push(R('Adressage', lab, 'err', xs.map(cidr).join(', '), ys.map(cidr).join(', '), 'Aucune adresse dans le même sous-réseau.'));
-        else res.push(R('Adressage', lab, fam === 4 ? 'warn' : 'info', xs.map(cidr).join(', ') || 'aucune', ys.map(cidr).join(', ') || 'aucune', `IPv${fam} n’est configuré que d’un côté.`));
+        if (xs.length && ys.length) res.push(R('Adressage', lab, 'err', xs.map(cidr).join(', '), ys.map(cidr).join(', '), 'Les adresses ne sont pas dans le même sous-réseau : un des deux côtés a une IP ou un masque erroné. Aucun protocole ne montera sur ce lien.'));
+        else {
+          const routed = (D, i) => l3Cfg(i) || i.mpls || i.iso || !!ospfOf(D, i) || mplsOf(D, i).ldp || mplsOf(D, i).rsvp;
+          const routedBoth = routed(A, ia) && routed(B, ib);
+          res.push(R('Adressage', lab, fam === 4 ? (routedBoth ? 'err' : 'warn') : 'info', xs.map(cidr).join(', ') || 'aucune', ys.map(cidr).join(', ') || 'aucune',
+            fam === 4 && routedBoth ? `Aucune adresse IPv4 sur ${xs.length ? nB : nA} alors que l’interface est configurée pour le routage : mot-clé « address » manquant ou mal orthographié ? Aucun protocole ne montera.` : `IPv${fam} n’est configuré que d’un côté.`));
+        }
         continue;
       }
       const [x, y] = pair;
@@ -1366,13 +2046,22 @@ td.off{text-decoration:line-through;color:var(--muted)}
       const netS = fam === 4 ? v4str(net4(x.n, x.len)) + '/' + x.len : 'préfixe /' + x.len;
       res.push(R('Adressage', lab, 'ok', cidr(x), cidr(y), 'Même sous-réseau : ' + netS + '.'));
     }
-    const hasIp = allAddr(ia).length && allAddr(ib).length;
+    // Lien routé : les deux côtés sont configurés pour IP, même si une adresse est absente ou mal formée
+    const hasIp = (allAddr(ia).length || l3Cfg(ia)) && (allAddr(ib).length || l3Cfg(ib));
+    // Les descriptions citent-elles bien le voisin ? (erreur de câblage ou de documentation)
+    const dA = ia.desc || (pa0 => pa0 && pa0.desc)(phys(A, ia)), dB = ib.desc || (pb0 => pb0 && pb0.desc)(phys(B, ib));
+    if (dA || dB) {
+      const mA = mentions(dA, B.hostname, A.hostname), mB = mentions(dB, A.hostname, B.hostname);
+      if (!(mA && mB)) res.push(R('Interface', 'Description', 'info', dA || 'aucune', dB || 'aucune',
+        [!mA ? `la description côté ${nA} ne cite pas ${nB}` : '', !mB ? `la description côté ${nB} ne cite pas ${nA}` : ''].filter(Boolean).join(' ; ').replace(/^./, c => c.toUpperCase()) + ' : vérifiez le câblage ou la documentation du lien.'));
+      else res.push(R('Interface', 'Description', 'ok', dA, dB, 'Chaque description cite l’équipement d’en face.'));
+    }
     if ((ia.vrf || ib.vrf) && hasIp) res.push(R('Adressage', 'Table de routage', 'info', ia.vrf || 'globale', ib.vrf || 'globale', 'Les noms de VRF sont locaux ; vérifiez qu’il s’agit bien du même service.'));
 
     // --- État administratif
     const pa = phys(A, ia), pb = phys(B, ib);
     const offA = ia.disabled || (pa && pa.disabled), offB = ib.disabled || (pb && pb.disabled);
-    res.push(R('Interface', 'État administratif', offA || offB ? 'warn' : 'ok', offA ? 'désactivée' : 'active', offB ? 'désactivée (shutdown)' : 'active',
+    res.push(R('Interface', 'État administratif', offA || offB ? 'warn' : 'ok', offA ? 'désactivée' : 'active', offB ? 'désactivée' : 'active',
       offA || offB ? 'Une interface est désactivée : le lien ne montera pas.' : 'Les deux interfaces sont actives.'));
 
     // --- Encapsulation VLAN (lien L3)
@@ -1450,6 +2139,18 @@ td.off{text-decoration:line-through;color:var(--muted)}
       if (qa.duplex || qb.duplex) res.push(R('Interface', 'Duplex', dA === dB ? 'ok' : 'warn', dA, dB, dA === dB ? 'Duplex identique.' : 'Duplex forcé d’un côté ou différent : risque de duplex mismatch (erreurs CRC, collisions tardives).'));
     }
 
+    // --- LLDP sur les ports physiques
+    if (pa && pb && pa.kind !== 'vlanif' && pb.kind !== 'vlanif' && !isMgmt(pa)) {
+      const lA = lldpOn(A, la || pa), lB = lldpOn(B, lb || pb);
+      if (lA !== null && lB !== null && (lA || lB)) res.push(R('Interface', 'LLDP', lA && lB ? 'ok' : 'info', lA ? 'activé' : 'non activé', lB ? 'activé' : 'non activé',
+        lA && lB ? 'LLDP actif sur les deux ports.' : `LLDP n’est actif que sur ${lA ? nA : nB} : pas de découverte du voisin sur ce lien pour le dépannage.`));
+    }
+    // --- Filtres de pare-feu sur l'interface
+    if (hasIp && (ia.filterIn || ia.filterOut || ib.filterIn || ib.filterOut)) {
+      const f = i => [i.filterIn && 'entrée ' + i.filterIn, i.filterOut && 'sortie ' + i.filterOut].filter(Boolean).join(', ') || 'aucun';
+      res.push(R('Interface', 'Filtres', f(ia) === f(ib) ? 'ok' : 'info', f(ia), f(ib), f(ia) === f(ib) ? 'Mêmes filtres des deux côtés.' : 'Filtres différents de chaque côté : vérifiez que le trafic de contrôle (OSPF, BFD, LDP, BGP) est bien autorisé dans les deux sens.'));
+    }
+
     // --- Niveau 2 (paires physiques)
     if (!hasIp) {
       const L = l2Profile(A, pa), M = l2Profile(B, pb);
@@ -1486,7 +2187,33 @@ td.off{text-decoration:line-through;color:var(--muted)}
     checkIsis(res, A, B, sA, sB);
     // --- MPLS
     if (hasIp) checkMpls(res, A, B, mplsOf(A, ia), mplsOf(B, ib));
+    // --- Qualité de service
+    checkCos(res, A, B, cosOf(A, ia), cosOf(B, ib));
     return res;
+  }
+
+  function checkCos(res, A, B, ca, cb) {
+    if (!ca && !cb) return;
+    const nA = name(A), nB = name(B);
+    if (!ca || !cb) {
+      res.push(R('QoS', 'Configuration QoS', 'warn', ca ? 'configurée' : 'aucune', cb ? 'configurée' : 'aucune', `La QoS n’est configurée que sur ${ca ? nA : nB} : files d’attente et marquages ne seront pas symétriques sur ce lien.`));
+      return;
+    }
+    const fm = m => Object.entries(m).map(([k, v]) => k + ' ' + v).join(', ') || 'aucun';
+    if (Object.keys(ca.classifiers).length + Object.keys(ca.rewrite).length + Object.keys(cb.classifiers).length + Object.keys(cb.rewrite).length) {
+      const probs = [];
+      for (const t of Object.keys(ca.rewrite)) if (!cb.classifiers[t]) probs.push(`${nA} marque en ${t.toUpperCase()} mais ${nB} ne classifie pas sur ${t.toUpperCase()}`);
+      for (const t of Object.keys(cb.rewrite)) if (!ca.classifiers[t]) probs.push(`${nB} marque en ${t.toUpperCase()} mais ${nA} ne classifie pas sur ${t.toUpperCase()}`);
+      for (const t of Object.keys(ca.classifiers)) if (ca.classifiers[t] !== 'trust' && !cb.rewrite[t] && Object.keys(cb.rewrite).length) probs.push(`${nA} classifie sur ${t.toUpperCase()} mais ${nB} marque autrement`);
+      for (const t of Object.keys(cb.classifiers)) if (cb.classifiers[t] !== 'trust' && !ca.rewrite[t] && Object.keys(ca.rewrite).length) probs.push(`${nB} classifie sur ${t.toUpperCase()} mais ${nA} marque autrement`);
+      const same = fm(ca.classifiers) === fm(cb.classifiers) && fm(ca.rewrite) === fm(cb.rewrite);
+      res.push(R('QoS', 'Classification et marquage', probs.length ? 'warn' : 'ok', `classifie : ${fm(ca.classifiers)} ; marque : ${fm(ca.rewrite)}`, `classifie : ${fm(cb.classifiers)} ; marque : ${fm(cb.rewrite)}`,
+        probs.length ? probs.join(' ; ') + ' : le trafic risque d’arriver dans la mauvaise classe de service.' : (same ? 'Marquage et classification identiques des deux côtés.' : 'Types cohérents, mais noms de règles différents : vérifiez qu’elles utilisent les mêmes codes.')));
+    }
+    if (ca.scheduler || cb.scheduler) res.push(R('QoS', 'Ordonnancement', (ca.scheduler || '') === (cb.scheduler || '') ? 'ok' : 'info', ca.scheduler || 'aucun', cb.scheduler || 'aucun',
+      (ca.scheduler || '') === (cb.scheduler || '') ? 'Même ordonnancement des files.' : 'Ordonnancements différents : les files d’attente ne sont pas traitées de la même façon dans chaque sens.'));
+    if (ca.shaping || cb.shaping) res.push(R('QoS', 'Shaping', (ca.shaping || '') === (cb.shaping || '') ? 'ok' : 'warn', ca.shaping || 'aucun', cb.shaping || 'aucun',
+      (ca.shaping || '') === (cb.shaping || '') ? 'Même débit de shaping.' : 'Shaping différent de chaque côté : débit asymétrique sur le lien.'));
   }
 
   function fmtAuth(a) {
@@ -1520,7 +2247,10 @@ td.off{text-decoration:line-through;color:var(--muted)}
       }
     }
     if (oA.cost != null || oB.cost != null) res.push(R(P, 'Coût', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'ok' : 'info', oA.cost ?? 'auto (bande passante)', oB.cost ?? 'auto (bande passante)', (oA.cost ?? 'auto') === (oB.cost ?? 'auto') ? 'Coûts symétriques.' : 'Coûts asymétriques : le trafic aller et retour peut prendre des chemins différents.'));
-    if (oA.bfd || oB.bfd) res.push(R(P, 'BFD', oA.bfd && oB.bfd ? 'ok' : 'warn', oA.bfd ? 'activé' + (oA.bfd.min ? ` (${oA.bfd.min} ms × ${oA.bfd.mult || 3})` : '') : 'non', oB.bfd ? 'activé' + (oB.bfd.min ? ` (${oB.bfd.min} ms × ${oB.bfd.mult || 3})` : '') : 'non',
+    const bfdT = b => b && b.min ? `${b.min} ms × ${b.mult || 3}` : null;
+    if (oA.bfd && oB.bfd && bfdT(oA.bfd) && bfdT(oB.bfd) && bfdT(oA.bfd) !== bfdT(oB.bfd)) res.push(R(P, 'BFD', 'info', 'activé (' + bfdT(oA.bfd) + ')', 'activé (' + bfdT(oB.bfd) + ')',
+      `Timers BFD différents : la session prend l’intervalle le plus lent des deux (${Math.max(oA.bfd.min, oB.bfd.min)} ms), la détection de panne sera plus lente que prévu d’un côté.`));
+    else if (oA.bfd || oB.bfd) res.push(R(P, 'BFD', oA.bfd && oB.bfd ? 'ok' : 'warn', oA.bfd ? 'activé' + (oA.bfd.min ? ` (${oA.bfd.min} ms × ${oA.bfd.mult || 3})` : '') : 'non', oB.bfd ? 'activé' + (oB.bfd.min ? ` (${oB.bfd.min} ms × ${oB.bfd.mult || 3})` : '') : 'non',
       oA.bfd && oB.bfd ? 'BFD des deux côtés (les timers sont négociés).' : 'BFD d’un seul côté : la session BFD ne montera pas, pas de détection rapide.'));
   }
   function checkIsis(res, A, B, sA, sB) {
@@ -1554,16 +2284,22 @@ td.off{text-decoration:line-through;color:var(--muted)}
       res.push(R('MPLS', 'LDP', probs.length ? 'err' : 'ok', lab(mA, A), lab(mB, B), probs.length ? probs.join(' ; ') + '.' : 'LDP actif des deux côtés.'));
     }
     if (mA.rsvp || mB.rsvp) res.push(R('MPLS', 'RSVP-TE', mA.rsvp === mB.rsvp ? 'ok' : 'warn', mA.rsvp ? 'actif' : 'non', mB.rsvp ? 'actif' : 'non', mA.rsvp === mB.rsvp ? 'RSVP des deux côtés.' : 'RSVP d’un seul côté : les tunnels TE ne passeront pas ici.'));
+    if (mA.rsvp && mB.rsvp) {
+      if (mA.rsvpBw || mB.rsvpBw) res.push(R('MPLS', 'Bande passante RSVP', (mA.rsvpBw || '') === (mB.rsvpBw || '') ? 'ok' : 'warn', mA.rsvpBw || 'débit du lien', mB.rsvpBw || 'débit du lien',
+        (mA.rsvpBw || '') === (mB.rsvpBw || '') ? 'Même bande passante réservable.' : 'Bande passante réservable différente dans chaque sens : le CSPF peut accepter un LSP dans un sens et le refuser dans l’autre.'));
+      if (mA.linkProtection || mB.linkProtection) res.push(R('MPLS', 'Protection de lien', mA.linkProtection && mB.linkProtection ? 'ok' : 'warn', mA.linkProtection ? 'activée' : 'non', mB.linkProtection ? 'activée' : 'non',
+        mA.linkProtection && mB.linkProtection ? 'Protection de lien (fast reroute) des deux côtés.' : 'Protection de lien d’un seul côté : en cas de coupure, le secours rapide ne fonctionne que dans un sens.'));
+    }
   }
 
-  Object.assign(V, { findLinks, ifVariants, suggestPairs, checkLink, fmtAuth, checkOspf, checkIsis, checkMpls });
+  Object.assign(V, { probableLinks, findLinks, ifVariants, suggestPairs, checkLink, fmtAuth, checkOspf, checkIsis, checkMpls });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
 /* Vis-à-vis : Contrôles des sessions BGP */
 (function (V) {
   'use strict';
-  const { R, adapter, cmpSecret, connectedIf, fmtSecret, name, ownerOf, sourceIp } = V;
+  const { mentions, ospfOf, isisOf, R, adapter, cmpSecret, connectedIf, fmtSecret, name, ownerOf, sourceIp } = V;
 
   /* ---------- BGP ---------- */
   function findSessions(A, B) {
@@ -1579,6 +2315,29 @@ td.off{text-decoration:line-through;color:var(--muted)}
       if (!ownerOf(A, m.ip) || S.some(s => s.b === m)) continue;
       S.push({ a: null, b: m });
     }
+    // Sessions orphelines : l'adresse visée n'existe plus en face (IP modifiée, faute de frappe).
+    // On cherche le voisin qui vise manifestement cet équipement (description, AS, adresse source, sous-réseau).
+    const score = (X, Y, x, y) => {
+      let s = 0;
+      if (mentions(x.desc, Y.hostname, X.hostname)) s += 2;
+      if (sourceIp(Y, y).ip && sourceIp(Y, y).ip === x.ip) s += 1;
+      if (sourceIp(X, x).ip && sourceIp(X, x).ip === y.ip) s += 2;
+      if (String(X.bgp.as) !== String(Y.bgp.as) && x.peerAs && String(x.peerAs) === String(y.localAs || Y.bgp.as)) s += 1;
+      if (connectedIf(Y, x.ip)) s += 1;
+      return s;
+    };
+    for (const s of S) {
+      if (s.a && s.b) continue;
+      if (!s.a) {
+        const pool = A.bgp.neighbors.filter(n => !S.some(t => t.a === n) && !ownerOf(B, n.ip) && !ownerOf(A, n.ip));
+        const best = pool.map(n => [n, score(A, B, n, s.b)]).filter(e => e[1] >= 2).sort((x, y) => y[1] - x[1])[0];
+        if (best) s.a = best[0];
+      } else {
+        const pool = B.bgp.neighbors.filter(m => !S.some(t => t.b === m) && !ownerOf(A, m.ip) && !ownerOf(B, m.ip));
+        const best = pool.map(m => [m, score(B, A, m, s.a)]).filter(e => e[1] >= 2).sort((x, y) => y[1] - x[1])[0];
+        if (best) s.b = best[0];
+      }
+    }
     return S;
   }
   const FAM_LABEL = { 'ipv4-unicast': 'IPv4 unicast', 'ipv6-unicast': 'IPv6 unicast', vpnv4: 'VPNv4', vpnv6: 'VPNv6', evpn: 'EVPN', l2vpn: 'L2VPN', 'ipv4-labeled': 'IPv4 labeled', 'ipv6-labeled': 'IPv6 labeled (6PE)', flowspec: 'Flowspec', rtc: 'Route-target', 'ipv4-multicast': 'IPv4 multicast' };
@@ -1591,6 +2350,9 @@ td.off{text-decoration:line-through;color:var(--muted)}
       return res;
     }
     res.push(R('BGP', 'Réciprocité', 'ok', 'neighbor ' + n.ip, 'peer ' + m.ip, 'Session déclarée des deux côtés.'));
+    const ghostA = !ownerOf(B, n.ip), ghostB = !ownerOf(A, m.ip);
+    if (ghostA || ghostB) res.push(R('BGP', 'Adresse du voisin', 'err', ghostA ? `${n.ip} absente de ${name(B)}` : n.ip, ghostB ? `${m.ip} absente de ${name(A)}` : m.ip,
+      [ghostA ? `${name(A)} vise ${n.ip}, mais aucune interface de ${name(B)} ne porte cette adresse` : '', ghostB ? `${name(B)} vise ${m.ip}, mais aucune interface de ${name(A)} ne porte cette adresse` : ''].filter(Boolean).join(' ; ') + '. La session ne peut pas s’établir.'));
     const sa = sourceIp(A, n), sb = sourceIp(B, m);
     const addrProbs = [];
     if (sa.ip && sa.ip !== m.ip) addrProbs.push(`${name(A)} source depuis ${sa.ip} (${sa.how}), mais ${name(B)} attend ${m.ip}`);
@@ -1598,6 +2360,15 @@ td.off{text-decoration:line-through;color:var(--muted)}
     if (!sa.ip && !connectedIf(A, n.ip)) addrProbs.push(`${name(A)} : définissez « local-address » pour une session entre loopbacks`);
     if (!sb.ip && !connectedIf(B, m.ip)) addrProbs.push(`${name(B)} : définissez « peer ${m.ip} connect-interface » pour une session entre loopbacks`);
     res.push(R('BGP', 'Adresses de session', addrProbs.length ? 'err' : 'ok', `${sa.ip || '?'} → ${n.ip}`, `${sb.ip || '?'} → ${m.ip}`, addrProbs.length ? addrProbs.join(' ; ') + '. La connexion TCP sera refusée.' : 'Chaque côté source depuis l’adresse attendue par l’autre.'));
+    // Session entre loopbacks : chaque loopback doit être annoncée dans l'IGP, sinon l'autre côté ne la joint pas
+    const igpProbs = [];
+    for (const [D, src] of [[A, sa], [B, sb]]) {
+      const own = src.ip && ownerOf(D, src.ip);
+      const hasIgp = D.ospf.ifs.size || D.isis.enabled;
+      if (own && (own.loopback || own.kind === 'loopback') && hasIgp && !ospfOf(D, own) && !isisOf(D, own))
+        igpProbs.push(`${name(D)} : la loopback ${own.name} (${src.ip}) n’est annoncée ni en OSPF ni en IS-IS`);
+    }
+    if (igpProbs.length) res.push(R('BGP', 'Joignabilité des loopbacks', 'err', sa.ip || '?', sb.ip || '?', igpProbs.join(' ; ') + ' : le voisin ne pourra pas joindre cette adresse, la session ne montera pas.'));
     const lasA = n.localAs || A.bgp.as, lasB = m.localAs || B.bgp.as;
     const pA = n.peerAs, pB = m.peerAs;
     const asOk1 = pA && String(pA) === String(lasB), asOk2 = pB && String(pB) === String(lasA);
@@ -1641,6 +2412,131 @@ td.off{text-decoration:line-through;color:var(--muted)}
   }
 
   Object.assign(V, { findSessions, FAM_LABEL, famL, checkSession });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : contrôles des services (VRF L3VPN, VPLS, EVPN) entre les deux équipements */
+(function (V) {
+  'use strict';
+  const { R, name } = V;
+
+  const TYPE = { vrf: 'VRF (L3VPN)', vpls: 'VPLS', evpn: 'EVPN', 'mac-vrf': 'MAC-VRF', l2vpn: 'L2VPN', 'virtual-router': 'virtual-router', 'virtual-switch': 'virtual-switch' };
+  const typeLabel = t => TYPE[t] || t || 'type non précisé';
+  const FAM_NEED = { vrf: 'vpnv4', vpls: 'l2vpn', l2vpn: 'l2vpn', evpn: 'evpn', 'mac-vrf': 'evpn' };
+  const FAM_TXT = { vpnv4: 'VPNv4 (inet-vpn)', l2vpn: 'L2VPN (l2vpn signaling)', evpn: 'EVPN' };
+  const rtList = s => [...s].sort().join(', ') || 'aucun';
+  const hasFam = (D, f) => D.bgp.neighbors.some(n => n.families && n.families.has(f));
+
+  // Deux instances forment un même service si l'une importe ce que l'autre exporte, ou si elles portent le même nom
+  function servicePairs(A, B) {
+    const out = [];
+    for (const a of A.instances.values()) for (const b of B.instances.values()) {
+      const share = [...a.rtExport].some(x => b.rtImport.has(x)) || [...b.rtExport].some(x => a.rtImport.has(x));
+      if (share || a.name === b.name) out.push({ a, b });
+    }
+    return out;
+  }
+
+  function checkService(A, B, a, b) {
+    const res = [], nA = name(A), nB = name(B);
+    res.push(R('Service', 'Type', a.type === b.type ? 'ok' : 'err', typeLabel(a.type), typeLabel(b.type),
+      a.type === b.type ? 'Même type de service.' : 'Types de service différents : les deux instances ne peuvent pas échanger de routes.'));
+    const ab = [...a.rtExport].filter(x => b.rtImport.has(x)), ba = [...b.rtExport].filter(x => a.rtImport.has(x));
+    res.push(R('Service', 'Route-targets', ab.length && ba.length ? 'ok' : 'err', `import ${rtList(a.rtImport)} ; export ${rtList(a.rtExport)}`, `import ${rtList(b.rtImport)} ; export ${rtList(b.rtExport)}`,
+      ab.length && ba.length ? 'Chaque côté importe les route-targets exportés par l’autre.'
+        : [!ab.length ? `${nB} n’importe aucun route-target exporté par ${nA}` : '', !ba.length ? `${nA} n’importe aucun route-target exporté par ${nB}` : ''].filter(Boolean).join(' ; ') + ' : le service ne passera pas dans ce sens.'));
+    const rdSev = !a.rd || !b.rd ? 'err' : (a.rd === b.rd ? 'info' : 'ok');
+    res.push(R('Service', 'Route-distinguisher', rdSev, a.rd || 'absent', b.rd || 'absent',
+      rdSev === 'err' ? 'Route-distinguisher absent : l’instance ne peut pas annoncer ses routes.' : rdSev === 'info' ? 'RD identiques : fonctionne, mais un RD propre à chaque équipement est recommandé (multi-chemin, réflecteurs de routes).' : 'RD distincts.'));
+    if (a.type === 'vpls' || b.type === 'vpls') {
+      const ids = I => I.sites.map(x => x.id).filter(Boolean);
+      const dupId = ids(a).filter(x => ids(b).includes(x));
+      const dupName = a.sites.map(x => x.name).filter(n => b.sites.some(y => y.name === n));
+      const missing = !ids(a).length || !ids(b).length;
+      const st = I => I.sites.map(x => `${x.name} (id ${x.id || '?'})`).join(', ') || 'aucun';
+      res.push(R('Service', 'Site VPLS', dupId.length || dupName.length || missing ? 'err' : 'ok', st(a), st(b),
+        dupId.length ? `Même site-identifier (${dupId.join(', ')}) des deux côtés : collision de site, le pseudo-wire ne montera pas.`
+          : dupName.length ? `Même nom de site (${dupName.join(', ')}) des deux côtés : collision de site VPLS.`
+            : missing ? 'Site VPLS absent d’un côté : l’instance ne peut pas participer au VPLS.' : 'Sites distincts.'));
+      if (a.vlanId || b.vlanId) res.push(R('Service', 'Normalisation VLAN', (a.vlanId || 'aucune') === (b.vlanId || 'aucune') ? 'ok' : 'warn', a.vlanId || 'aucune', b.vlanId || 'aucune',
+        (a.vlanId || 'aucune') === (b.vlanId || 'aucune') ? 'Identique.' : 'Normalisation VLAN différente : les trames peuvent être rejetées ou mal étiquetées en sortie.'));
+    }
+    const f = FAM_NEED[a.type];
+    if (f) {
+      const fa = hasFam(A, f), fb = hasFam(B, f);
+      res.push(R('Service', 'Famille BGP requise', fa && fb ? 'ok' : 'err', fa ? FAM_TXT[f] + ' activée' : 'absente', fb ? FAM_TXT[f] + ' activée' : 'absente',
+        fa && fb ? `La famille ${FAM_TXT[f]} est activée sur les sessions BGP des deux équipements.` : `Sans famille ${FAM_TXT[f]} sur ses sessions BGP, ${fa ? nB : nA} ne peut pas annoncer ce service.`));
+    }
+    res.push(R('Service', 'Interfaces attachées', a.ifaces.length && b.ifaces.length ? 'ok' : 'warn', a.ifaces.join(', ') || 'aucune', b.ifaces.join(', ') || 'aucune',
+      a.ifaces.length && b.ifaces.length ? '' : `Aucune interface attachée sur ${!a.ifaces.length ? nA : nB} : le service n’a pas d’accès client de ce côté.`));
+    return res;
+  }
+
+  function serviceChecks(A, B) {
+    const pairs = servicePairs(A, B).map(p => ({ a: p.a, b: p.b, checks: checkService(A, B, p.a, p.b) }));
+    const local = [];
+    for (const [D, side] of [[A, 'A'], [B, 'B']]) for (const I of D.instances.values()) {
+      if (pairs.some(p => p[side.toLowerCase()] === I)) continue;
+      local.push({ side, name: I.name, type: typeLabel(I.type), rt: rtList(new Set([...I.rtImport, ...I.rtExport])), ifaces: I.ifaces.join(', ') || 'aucune' });
+    }
+    const dev = [];
+    for (const D of [A, B]) for (const I of D.instances.values()) {
+      const f = FAM_NEED[I.type];
+      if (f && D.bgp.neighbors.length && !hasFam(D, f)) dev.push(R('Services', 'Famille BGP pour ' + I.name, 'err', D === A ? `${typeLabel(I.type)} sans ${FAM_TXT[f]}` : '—', D === B ? `${typeLabel(I.type)} sans ${FAM_TXT[f]}` : '—',
+        `${name(D)} : l’instance ${I.name} a besoin de la famille BGP ${FAM_TXT[f]} sur au moins une session pour être annoncée.`));
+    }
+    return { pairs, local, dev };
+  }
+
+  Object.assign(V, { serviceChecks, typeLabel });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : paramètres communs du réseau.
+ * Deux équipements d'un même réseau partagent normalement leurs serveurs (NTP, RADIUS, syslog), leurs communautés
+ * SNMP et les objets construits sur un même gabarit (prefix-lists, filtres, politiques, QoS…). Une différence
+ * trahit souvent une faute de frappe : elle est signalée, avec les lignes en cause. */
+(function (V) {
+  'use strict';
+  const { R, name, natSort } = V;
+
+  function listCheck(res, A, B, label, a, b, why) {
+    a = [...new Set(a)].sort(natSort); b = [...new Set(b)].sort(natSort);
+    if (!a.length && !b.length) return;
+    const onlyA = a.filter(x => !b.includes(x)), onlyB = b.filter(x => !a.includes(x));
+    if (!onlyA.length && !onlyB.length) { res.push(R('Administration', label, 'ok', a.join(', '), b.join(', '), 'Identiques sur les deux équipements.')); return; }
+    res.push(R('Administration', label, 'warn', a.join(', ') || 'aucun', b.join(', ') || 'aucun',
+      [onlyA.length ? `seulement sur ${name(A)} : ${onlyA.join(', ')}` : '', onlyB.length ? `seulement sur ${name(B)} : ${onlyB.join(', ')}` : ''].filter(Boolean).join(' ; ').replace(/^./, c => c.toUpperCase()) + '. ' + why));
+  }
+
+  function commonChecks(A, B) {
+    const res = [];
+    const why = 'Deux équipements d’un même réseau utilisent normalement les mêmes : faute de frappe ?';
+    listCheck(res, A, B, 'Serveurs NTP', A.sys.ntp, B.sys.ntp, why);
+    listCheck(res, A, B, 'Serveurs RADIUS', A.sys.radius, B.sys.radius, why);
+    listCheck(res, A, B, 'Serveurs syslog', A.sys.syslog, B.sys.syslog, why);
+    if (A.sys.tz || B.sys.tz) listCheck(res, A, B, 'Fuseau horaire', [A.sys.tz || 'défaut'], [B.sys.tz || 'défaut'], 'Horodatage des journaux incohérent entre les deux équipements.');
+    // Objets de même nom : même contenu attendu
+    const OA = A.objects || new Map(), OB = B.objects || new Map();
+    const common = [...OA.keys()].filter(k => OB.has(k)).sort(natSort);
+    let same = 0;
+    for (const k of common) {
+      const a = OA.get(k).lines, b = OB.get(k).lines;
+      const onlyA = [...a.keys()].filter(x => !b.has(x)).map(x => a.get(x)), onlyB = [...b.keys()].filter(x => !a.has(x)).map(x => b.get(x));
+      if (!onlyA.length && !onlyB.length) { same++; continue; }
+      const ex = (l, who) => l.length ? `${who} : « ${l.slice(0, 3).map(x => x || '(définition vide)').join(' », « ')} »${l.length > 3 ? ` et ${l.length - 3} autre(s)` : ''}` : '';
+      res.push(R('Objets communs', OA.get(k).show, 'warn', `${a.size} ligne(s), ${onlyA.length} différente(s)`, `${b.size} ligne(s), ${onlyB.length} différente(s)`,
+        `Même nom, contenu différent. ${[ex(onlyA, 'Seulement sur ' + name(A)), ex(onlyB, 'seulement sur ' + name(B))].filter(Boolean).join(' ; ')}.`));
+    }
+    if (common.length) res.push(R('Objets communs', 'Objets identiques', 'ok', `${same} sur ${common.length}`, `${same} sur ${common.length}`, `${same} objet(s) de même nom (prefix-lists, filtres, politiques, QoS, serveurs…) ont exactement le même contenu des deux côtés.`));
+    const own = (O, P) => [...O.keys()].filter(k => !P.has(k)).map(k => O.get(k).show);
+    const oa = own(OA, OB), ob = own(OB, OA);
+    if (oa.length || ob.length) res.push(R('Objets communs', 'Objets propres à un équipement', 'info', oa.length ? `${oa.length} : ${oa.slice(0, 6).join(', ')}${oa.length > 6 ? '…' : ''}` : 'aucun', ob.length ? `${ob.length} : ${ob.slice(0, 6).join(', ')}${ob.length > 6 ? '…' : ''}` : 'aucun',
+      'Objets présents d’un seul côté : normal pour un service local, à vérifier s’ils devraient exister partout.'));
+    return res;
+  }
+
+  Object.assign(V, { commonChecks });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
@@ -1692,14 +2588,32 @@ td.off{text-decoration:line-through;color:var(--muted)}
 /* Vis-à-vis : Point d’entrée de l’analyse et résumés pour l’interface */
 (function (V) {
   'use strict';
-  const { R, allAddr, checkLink, checkSession, cidr, findLinks, findSessions, globalChecks, ipMtu, isisOf, l3Ifs, mplsOf, name, natSort, ospfOf, parse, phys, sameNet, suggestPairs } = V;
+  const { commonChecks, l3Cfg, encapOf, serviceChecks, R, probableLinks, mentions, lagOf, isMgmt, allAddr, checkLink, checkSession, cidr, findLinks, findSessions, globalChecks, ipMtu, isisOf, l3Ifs, mplsOf, name, natSort, ospfOf, parse, phys, sameNet, suggestPairs } = V;
 
   /* ---------- Analyse ---------- */
   function analyze(textA, textB, vendorA, vendorB, manual) {
     const A = parse(textA, vendorA), B = parse(textB, vendorB);
     if (!A || !B) return { error: !A && !B ? 'both' : (!A ? 'A' : 'B'), A, B };
-    const links = findLinks(A, B);
-    const sugg = suggestPairs(A, B, links);
+    const direct = findLinks(A, B);
+    const links = [...direct, ...probableLinks(A, B, direct)];
+    // Ports rapprochés par leurs descriptions : on compare leurs unités routées (adressage, OSPF, MPLS…)
+    // plutôt que le seul port physique, sinon une adresse absente ou mal formée passerait inaperçue.
+    const unitsOf = (D, p) => {
+      if (l3Cfg(p)) return [p];
+      return [...D.ifs.values()].filter(u => u.parent === p.name && (l3Cfg(u) || ospfOf(D, u) || mplsOf(D, u).ldp));
+    };
+    const sugg = [];
+    for (const pr of suggestPairs(A, B, links)) {
+      const ua = unitsOf(A, pr.a), ub = unitsOf(B, pr.b);
+      if (ua.length && ub.length) {
+        if (ua.length === 1 && ub.length === 1) { sugg.push({ a: ua[0], b: ub[0], how: 'description' }); continue; }
+        const key = (D, u) => encapOf(D, u).tag ?? encapOf(D, u).vlanif ?? u.unit ?? '0';
+        let paired = false;
+        for (const u of ua) { const v = ub.find(w => String(key(B, w)) === String(key(A, u))); if (v) { sugg.push({ a: u, b: v, how: 'description' }); paired = true; } }
+        if (paired) continue;
+      }
+      sugg.push(pr);
+    }
     const lift = (D, i, other) => {
       if (!i || !other || allAddr(i).length || !allAddr(other).length) return i;
       const u = [...D.ifs.values()].find(x => x.parent === i.name && allAddr(x).some(a => allAddr(other).some(b => a.fam === b.fam && sameNet(a, b, Math.min(a.len, b.len)))));
@@ -1709,11 +2623,53 @@ td.off{text-decoration:line-through;color:var(--muted)}
       const a = A.ifs.get(p[0]), b = B.ifs.get(p[1]);
       return { a: lift(A, a, b), b: lift(B, b, a), how: 'manuel' };
     }).filter(p => p.a && p.b && !links.some(l => l.a === p.a && l.b === p.b));
-    const all = [...links, ...sugg, ...man].map(l => ({ a: l.a, b: l.b, how: l.how, checks: checkLink(A, l.a, B, l.b) }));
+    const all = [...links, ...sugg, ...man].map(l => ({ a: l.a, b: l.b, how: l.how, why: l.why || null, checks: checkLink(A, l.a, B, l.b) }));
+    const left = { A: unmatched(A, B, all, 'a'), B: unmatched(B, A, all, 'b') };
     const sessions = findSessions(A, B).map(s => ({ a: s.a, b: s.b, checks: checkSession(A, B, s) }));
-    const glob = globalChecks(A, B);
+    const glob = [];
+    // Anomalies de syntaxe ou de valeur, en tête des contrôles globaux
+    for (const D of [A, B]) for (const x of D.issues) glob.push(R('Syntaxe', 'Lecture de ' + name(D), x.sev, D === A ? x.msg : '—', D === B ? x.msg : '—', x.msg));
+    glob.push(...globalChecks(A, B));
     for (const d of [A, B]) for (const nt of d.notes) glob.push(R('Lecture', 'Configuration ' + name(d), nt.sev, d === A ? nt.msg : '', d === B ? nt.msg : '', nt.msg));
-    return { A, B, links: all, sessions, global: glob };
+    for (const [D, O, side] of [[A, B, 'A'], [B, A, 'B']]) for (const u of left[side].filter(u => u.toPeer)) {
+      glob.push(R('Couverture', 'Interface non comparée', 'warn', side === 'A' ? u.name : '—', side === 'B' ? u.name : '—',
+        `${u.name} (${u.detail}) est décrite comme allant vers ${name(O)}, mais aucune interface en face ne lui correspond. Vérifiez l’adressage ou ajoutez la paire à la main.`));
+    }
+    const svc = serviceChecks(A, B);
+    glob.push(...svc.dev);
+    // Gabarits : groupe défini des deux côtés mais appliqué d'un seul
+    for (const g of A.groups.defined.filter(x => B.groups.defined.includes(x))) {
+      const a = A.groups.applied.includes(g), b = B.groups.applied.includes(g);
+      if (a !== b) glob.push(R('Gabarits', 'Groupe ' + g, 'warn', a ? 'appliqué' : 'défini, non appliqué', b ? 'appliqué' : 'défini, non appliqué',
+        `Le groupe ${g} existe des deux côtés mais n’est appliqué que sur ${a ? name(A) : name(B)} : les deux équipements ne suivent pas le même gabarit.`));
+    }
+    if (A.ospf.ifs.size && B.ospf.ifs.size && (A.rsvp.size || B.rsvp.size) && A.sys.ospfTE !== B.sys.ospfTE) glob.push(R('Global', 'OSPF traffic-engineering', 'warn', A.sys.ospfTE ? 'activé' : 'non', B.sys.ospfTE ? 'activé' : 'non',
+      'Extensions TE d’OSPF actives d’un seul côté : le calcul de chemin contraint (CSPF) des LSP RSVP sera incomplet.'));
+    if (A.ospf.refBw || B.ospf.refBw) glob.push(R('Global', 'OSPF reference-bandwidth', (A.ospf.refBw || '') === (B.ospf.refBw || '') ? 'ok' : 'warn', A.ospf.refBw || 'défaut', B.ospf.refBw || 'défaut',
+      (A.ospf.refBw || '') === (B.ospf.refBw || '') ? 'Même bande passante de référence.' : 'Bande passante de référence différente : les coûts automatiques ne sont pas calculés de la même façon.'));
+    return { A, B, links: all, sessions, global: glob, common: commonChecks(A, B), unmatched: left, services: svc.pairs, localServices: svc.local };
+  }
+
+  /* Interfaces qui n'ont été comparées à rien : rien ne doit être ignoré en silence. */
+  function unmatched(D, O, links, side) {
+    const used = new Set();
+    for (const l of links) {
+      const i = side === 'a' ? l.a : l.b; used.add(i);
+      const p = phys(D, i); if (p) used.add(p);
+      const g = lagOf(D, i); if (g) used.add(g);
+    }
+    for (const i of D.ifs.values()) if (i.lag && used.has(D.ifs.get(i.lag))) used.add(i);
+    const out = [];
+    for (const i of D.ifs.values()) {
+      if (used.has(i) || i.loopback || i.kind === 'loopback' || isMgmt(i) || isMgmt(phys(D, i))) continue;
+      const ips = allAddr(i);
+      const pd = i.parent && D.ifs.get(i.parent) ? D.ifs.get(i.parent).desc : '';
+      const bad = i.badAddr || [];
+      const toPeer = mentions(i.desc, O.hostname, D.hostname) || ((ips.length || bad.length) && mentions(pd, O.hostname, D.hostname));
+      if (ips.length || bad.length) out.push({ name: i.name, detail: [ips.map(cidr).join(', '), bad.length ? `adresse mal formée « ${bad.join(', ')} »` : ''].filter(Boolean).join(', '), desc: i.desc || pd || '', toPeer: !!toPeer });
+      else if ((i.kind === 'phys' || i.kind === 'lag') && !i.lag && mentions(i.desc, O.hostname, D.hostname)) out.push({ name: i.name, detail: 'sans adresse IP', desc: i.desc, toPeer: true });
+    }
+    return out.sort((a, b) => (b.toPeer - a.toPeer) || natSort(a.name, b.name));
   }
 
   /* ---------- Résumé d'un équipement ---------- */
@@ -1741,15 +2697,278 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return [...dev.ifs.values()].filter(i => i.kind === 'phys' || i.kind === 'lag' || allAddr(i).length).map(i => i.name).sort(natSort);
   }
 
-  Object.assign(V, { analyze, summary, ifTable, pairable });
+  Object.assign(V, { analyze, unmatched, summary, ifTable, pairable });
+})(globalThis.VAV = globalThis.VAV || {});
+</script>
+<script>
+/* Vis-à-vis : comparaison complète de deux configurations
+ * (même équipement avant/après, ou deux équipements censés être configurés pareil).
+ * Compare toutes les interfaces par nom, les paramètres de routage, chaque voisin BGP,
+ * puis toutes les lignes de configuration, pour que rien ne passe entre les mailles. */
+(function (V) {
+  'use strict';
+  const { cosOf, lldpOn, isMgmt, typeLabel, R, adapter, allAddr, cidr, cmpSecret, fmtSecret, fmtSpeed, fmtVlans, ipMtu, isisOf, l2Profile, members, mplsOf, name, natSort, ospfOf, parse, J9 } = V;
+
+  const S = v => (v == null || v === '') ? null : String(v);
+
+  /* ---------- Faits comparables ---------- */
+  function ifFacts(dev, i) {
+    const f = [];
+    const add = (cat, label, v, x) => f.push(Object.assign({ cat, label, v: S(v) }, x || {}));
+    add('Général', 'Description', i.desc || null);
+    add('Général', 'État', i.disabled ? 'désactivée' : 'active');
+    add('Général', 'VRF', i.vrf, { def: 'globale' });
+    add('Adressage', 'IPv4', i.v4.map(cidr).sort().join(', ') || null);
+    add('Adressage', 'IPv6', i.v6.map(cidr).sort().join(', ') || null);
+    if (allAddr(i).length) add('Adressage', 'MTU IP', ipMtu(dev, i).v);
+    add('Interface', 'MTU', i.mtu, { def: 'défaut' });
+    add('Interface', 'VLAN', i.vlanId);
+    add('Interface', 'Tagging VLAN', i.tagging, { def: 'aucun' });
+    add('Interface', 'Vitesse', i.speed != null ? fmtSpeed(i.speed) : null, { def: 'auto' });
+    add('Interface', 'Duplex', i.duplex, { def: 'auto' });
+    add('Interface', 'Agrégat parent', i.lag, { def: 'aucun' });
+    add('Interface', 'Filtre en entrée', i.filterIn, { def: 'aucun' });
+    add('Interface', 'Filtre en sortie', i.filterOut, { def: 'aucun' });
+    if ((i.kind === 'phys' || i.kind === 'lag') && !isMgmt(i)) { const l = lldpOn(dev, i); if (l !== null) add('Interface', 'LLDP', l ? 'activé' : 'non activé'); }
+    const q = cosOf(dev, i);
+    if (q) {
+      const fm = m => Object.entries(m).map(([k, v]) => k + ' ' + v).join(', ') || null;
+      add('QoS', 'Ordonnancement', q.scheduler, { def: 'aucun' });
+      add('QoS', 'Shaping', q.shaping, { def: 'aucun' });
+      add('QoS', 'Classification', fm(q.classifiers), { def: 'aucune' });
+      add('QoS', 'Marquage', fm(q.rewrite), { def: 'aucun' });
+    }
+    if (i.kind === 'lag') {
+      add('Agrégat', 'Mode LACP', i.lacpMode || 'static');
+      add('Agrégat', 'Cadence LACP', i.lacpPeriod, { def: 'défaut' });
+      add('Agrégat', 'Membres', members(dev, i).join(', ') || 'aucun');
+      add('Agrégat', 'Liens minimum', i.minLinks, { def: '1' });
+    }
+    if ((i.kind === 'phys' || i.kind === 'lag') && !i.lag) {
+      const p = l2Profile(dev, i);
+      if (p && p.mode !== 'non configuré' && p.mode !== 'routé') {
+        add('Niveau 2', 'Mode du port', p.mode);
+        add('Niveau 2', 'VLAN non tagué', p.untagged, { def: 'aucun' });
+        add('Niveau 2', 'VLAN tagués', p.tagged === 'all' ? 'toutes' : (p.tagged.size ? fmtVlans(p.tagged) : null), { def: 'aucun' });
+      }
+    }
+    const o = ospfOf(dev, i);
+    add('OSPF', 'OSPF', o ? 'actif' : null, { gate: true });
+    if (o) {
+      add('OSPF', 'Area', o.area);
+      add('OSPF', 'Type de réseau', o.network);
+      add('OSPF', 'Hello / dead', `${o.hello} s / ${o.dead} s`);
+      add('OSPF', 'Passive', o.passive ? 'oui' : 'non');
+      add('OSPF', 'Coût', o.cost ?? 'auto');
+      add('OSPF', 'Authentification', o.auth ? o.auth.type + (o.auth.keyId ? ' clé ' + o.auth.keyId : '') : 'aucune', { secret: o.auth && o.auth.secret });
+      add('OSPF', 'BFD', o.bfd ? (o.bfd.min ? `${o.bfd.min} ms × ${o.bfd.mult || 3}` : 'oui') : 'non');
+    }
+    const o3 = ospfOf(dev, i, 'ospf3');
+    add('OSPFv3', 'OSPFv3', o3 ? 'actif, area ' + o3.area : null, { gate: true });
+    const s = isisOf(dev, i);
+    add('IS-IS', 'IS-IS', s ? 'actif' : null, { gate: true });
+    if (s) {
+      add('IS-IS', 'Niveaux', [...s.levels].sort().map(l => 'L' + l).join(' + ') || 'aucun');
+      add('IS-IS', 'Type de circuit', s.p2p ? 'point à point' : 'broadcast');
+      add('IS-IS', 'Passive', s.passive ? 'oui' : 'non');
+      add('IS-IS', 'Authentification', s.auth && s.auth.secret ? (s.auth.type || 'md5') : 'aucune', { secret: s.auth && s.auth.secret });
+    }
+    const m = mplsOf(dev, i);
+    if (m.ldp) add('MPLS', 'LDP', 'oui', { def: 'non' });
+    if (m.mplsFamily) add('MPLS', 'MPLS', 'oui', { def: 'non' });
+    if (m.rsvp) add('MPLS', 'RSVP', 'oui', { def: 'non' });
+    if (m.rsvpBw) add('MPLS', 'Bande passante RSVP', m.rsvpBw, { def: 'débit du lien' });
+    if (m.linkProtection) add('MPLS', 'Protection de lien', 'oui', { def: 'non' });
+    return f;
+  }
+
+  function devFacts(dev) {
+    const f = [];
+    const add = (cat, label, v, x) => f.push(Object.assign({ cat, label, v: S(v) }, x || {}));
+    const ids = adapter(dev).routerIds(dev);
+    add('Système', 'Nom d’hôte', dev.hostname, { soft: true });
+    add('Système', 'Router-ID', ids.global);
+    add('Système', 'LLDP', dev.lldp.enabled ? 'activé' : 'désactivé');
+    add('Système', 'VLAN déclarés', dev.vlans.size ? fmtVlans(new Set([...dev.vlans.values()].filter(Number.isFinite))) : null, { def: 'aucun' });
+    add('Système', 'VRF', dev.vrfs.size ? [...dev.vrfs].sort(natSort).join(', ') : null, { def: 'aucune' });
+    if (dev.ospf.ifs.size) add('OSPF', 'Router-ID OSPF', ids.ospf, { def: 'automatique' });
+    for (const [a, ar] of Object.entries(dev.ospf.areas)) add('OSPF', 'Area ' + a, ar.type + (ar.auth && ar.auth.type ? ', authentification ' + ar.auth.type : ''), { def: 'absente' });
+    add('OSPF', 'Interfaces OSPF', [...dev.ospf.ifs.keys()].sort(natSort).join(', ') || null, { def: 'aucune' });
+    if (dev.isis.enabled || dev.isis.nets.length) {
+      add('IS-IS', 'NET', dev.isis.nets.join(', ') || null, { def: 'absent' });
+      add('IS-IS', 'Interfaces IS-IS', [...dev.ifs.values()].filter(i => isisOf(dev, i)).map(i => i.name).sort(natSort).join(', ') || null, { def: 'aucune' });
+    }
+    if (dev.ldp.size || ids.lsr) {
+      add('MPLS', 'LSR-ID', ids.lsr, { def: 'non défini' });
+      add('MPLS', 'Interfaces LDP', [...dev.ifs.values()].filter(i => mplsOf(dev, i).ldp).map(i => i.name).sort(natSort).join(', ') || null, { def: 'aucune' });
+    }
+    const list = (a, def) => a && a.length ? a.slice().sort(natSort).join(', ') : null;
+    add('Système', 'Fuseau horaire', dev.sys.tz, { def: 'défaut' });
+    add('Système', 'Serveurs NTP', list(dev.sys.ntp), { def: 'aucun' });
+    add('Système', 'Serveurs syslog', list(dev.sys.syslog), { def: 'aucun' });
+    add('Système', 'Serveurs RADIUS', list(dev.sys.radius), { def: 'aucun' });
+    if (dev.sys.snmp.length) add('Système', 'Communautés SNMP', dev.sys.snmp.map(c => hash(c)).sort().join(','), { show: dev.sys.snmp.length + ' communauté(s), valeurs masquées' });
+    add('Gabarits', 'Groupes appliqués', list(dev.groups.applied), { def: 'aucun' });
+    add('Gabarits', 'Groupes définis non appliqués', list(dev.groups.unused), { def: 'aucun' });
+    add('Politiques', 'Politiques de routage', list(dev.sys.policies), { def: 'aucune' });
+    add('Politiques', 'Filtres / ACL', list(dev.sys.filters), { def: 'aucun' });
+    add('MPLS', 'LSP et modèles', list(dev.sys.lsps), { def: 'aucun' });
+    if (dev.ospf.ifs.size) { add('OSPF', 'Traffic-engineering', dev.sys.ospfTE ? 'activé' : 'non'); add('OSPF', 'Reference-bandwidth', dev.ospf.refBw, { def: 'défaut' }); }
+    if (dev.bgp.as || dev.bgp.neighbors.length) {
+      add('BGP', 'AS local', dev.bgp.as);
+      add('BGP', 'Router-ID BGP', ids.bgp, { def: 'automatique' });
+      add('BGP', 'Nombre de voisins', dev.bgp.neighbors.length);
+    }
+    return f;
+  }
+
+  const FAM = { 'ipv4-unicast': 'IPv4', 'ipv6-unicast': 'IPv6', vpnv4: 'VPNv4', vpnv6: 'VPNv6', evpn: 'EVPN', l2vpn: 'L2VPN', 'ipv4-labeled': 'IPv4 labeled', 'ipv6-labeled': '6PE', flowspec: 'Flowspec', rtc: 'RT-constraint' };
+  function bgpFacts(dev, n) {
+    const f = [];
+    const add = (cat, label, v, x) => f.push(Object.assign({ cat, label, v: S(v) }, x || {}));
+    add('BGP', 'Groupe', n.group, { def: 'aucun' });
+    add('BGP', 'Type', n.type, { def: 'non précisé' });
+    add('BGP', 'AS distant', n.peerAs, { def: 'non défini' });
+    add('BGP', 'AS local forcé', n.localAs, { def: 'aucun' });
+    add('BGP', 'Adresse source', n.localAddress || n.connectIf, { def: 'automatique' });
+    add('BGP', 'Familles', n.families && n.families.size ? [...n.families].map(x => FAM[x] || x).sort().join(', ') : null, { def: 'défaut' });
+    add('BGP', 'Mot de passe', n.auth ? 'oui' : 'aucun', { secret: n.auth });
+    add('BGP', 'Multihop', n.multihop ? 'oui' + (n.ttl ? ', ttl ' + n.ttl : '') : null, { def: 'non' });
+    add('BGP', 'Hold time', n.hold, { def: 'défaut' });
+    add('BGP', 'BFD', n.bfd ? 'oui' : null, { def: 'non' });
+    add('BGP', 'État', n.shutdown ? 'désactivée' : 'active');
+    add('BGP', 'Ouverture TCP', n.passive ? 'passive' : null, { def: 'active' });
+    add('BGP', 'Description', n.desc || null);
+    return f;
+  }
+
+  /* ---------- Comparaison de deux listes de faits ---------- */
+  function compareFacts(fa, fb, nA, nB) {
+    const res = [], keys = [];
+    for (const x of [...fa, ...fb]) { const k = x.cat + '|' + x.label; if (!keys.includes(k)) keys.push(k); }
+    const get = (list, k) => list.find(x => x.cat + '|' + x.label === k);
+    const skip = new Set();
+    for (const k of keys) {
+      const [cat, label] = k.split('|');
+      if (skip.has(cat)) continue;
+      const x = get(fa, k), y = get(fb, k);
+      const def = (x && x.def) || (y && y.def) || null;
+      const va = x && x.v != null ? x.v : def, vb = y && y.v != null ? y.v : def;
+      const da = x && x.show != null ? x.show : va, db = y && y.show != null ? y.show : vb;
+      if (va == null && vb == null) continue;
+      const gate = (x && x.gate) || (y && y.gate);
+      if (gate && (va == null || vb == null)) {
+        skip.add(cat);
+        res.push(R(cat, label, 'warn', va || 'non', vb || 'non', `${label} n’est actif que sur ${va ? nA : nB}.`));
+        continue;
+      }
+      const sa = x && x.secret, sb = y && y.secret;
+      if ((sa || sb) && va === vb) {
+        const c = cmpSecret(sa, sb);
+        res.push(R(cat, label, c.sev === 'err' ? 'warn' : c.sev, va + (sa ? ', ' + fmtSecret(sa) : ''), vb + (sb ? ', ' + fmtSecret(sb) : ''), c.sev === 'ok' ? '' : c.msg));
+        continue;
+      }
+      if (va === vb) { res.push(R(cat, label, 'ok', da, db, '')); continue; }
+      const soft = (x && x.soft) || (y && y.soft);
+      res.push(R(cat, label, soft ? 'info' : 'warn', da ?? '—', db ?? '—',
+        va == null || vb == null ? `Défini uniquement sur ${va != null ? nA : nB}.` : 'Valeurs différentes.'));
+    }
+    return res;
+  }
+
+  /* ---------- Lignes de configuration ---------- */
+  function hash(s) { let h = 5381; for (let k = 0; k < s.length; k++) h = ((h * 33) ^ s.charCodeAt(k)) >>> 0; return h.toString(36); }
+  function maskLine(text) {
+    let id = text, show = text;
+    id = id.replace(/\$9\$[^\s"]+/g, m => { const d = J9.dec(m); return d != null ? '$9$#' + hash(d) : m; });
+    show = show.replace(/\$9\$[^\s"]+/g, '$9$•••').replace(/\$[156]\$[^\s"]+/g, m => m.slice(0, 3) + '•••').replace(/\$c\$[^\s"]+/g, '$c$•••')
+      .replace(/\b(simple|plain)(\s+)(\S+)/g, '$1$2•••');
+    return { id, show };
+  }
+  function diffLines(A, tA, B, tB) {
+    if (A.vendor !== B.vendor) return { available: false, reason: 'La comparaison ligne à ligne n’est possible qu’entre deux configurations du même constructeur.' };
+    const ad = adapter(A);
+    if (!ad.lines) return { available: false, reason: 'Ce constructeur ne fournit pas encore de lecture ligne à ligne.' };
+    const la = ad.lines(tA).map(l => Object.assign({ section: l.section }, maskLine(l.text)));
+    const lb = ad.lines(tB).map(l => Object.assign({ section: l.section }, maskLine(l.text)));
+    const count = list => { const m = new Map(); for (const l of list) m.set(l.id, (m.get(l.id) || 0) + 1); return m; };
+    const ca = count(la), cb = count(lb);
+    const removed = [], added = [];
+    const seenA = new Map(), seenB = new Map();
+    for (const l of la) { const n = (seenA.get(l.id) || 0) + 1; seenA.set(l.id, n); if (n > (cb.get(l.id) || 0)) removed.push(l); }
+    for (const l of lb) { const n = (seenB.get(l.id) || 0) + 1; seenB.set(l.id, n); if (n > (ca.get(l.id) || 0)) added.push(l); }
+    const order = [], groups = new Map();
+    const put = (l, kind) => { if (!groups.has(l.section)) { groups.set(l.section, { section: l.section, removed: [], added: [] }); order.push(l.section); } groups.get(l.section)[kind].push(l.show); };
+    removed.forEach(l => put(l, 'removed')); added.forEach(l => put(l, 'added'));
+    return { available: true, groups: order.map(s => groups.get(s)), nRemoved: removed.length, nAdded: added.length, nA: la.length, nB: lb.length };
+  }
+
+  /* ---------- Point d'entrée ---------- */
+  function compareConfigs(textA, textB, vendorA, vendorB) {
+    const A = parse(textA, vendorA), B = parse(textB, vendorB);
+    if (!A || !B) return { error: !A && !B ? 'both' : (!A ? 'A' : 'B'), A, B };
+    const nA = name(A), nB = name(B);
+    const names = [...new Set([...A.ifs.keys(), ...B.ifs.keys()])].sort(natSort);
+    const ifaces = [];
+    for (const n of names) {
+      const ia = A.ifs.get(n), ib = B.ifs.get(n);
+      if (ia && ib) ifaces.push({ name: n, status: 'both', checks: compareFacts(ifFacts(A, ia), ifFacts(B, ib), nA, nB) });
+      else {
+        const i = ia || ib, D = ia ? A : B;
+        const sum = [allAddr(i).map(cidr).join(', '), i.desc].filter(Boolean).join(', ') || 'configurée';
+        ifaces.push({ name: n, status: ia ? 'A' : 'B', checks: [R('Présence', 'Interface', 'warn', ia ? 'présente : ' + sum : 'absente', ib ? 'présente : ' + sum : 'absente', `L’interface n’existe que dans la configuration de ${name(D)}.`)] });
+      }
+    }
+    const bk = n => (n.vrf ? n.vrf + ' / ' : '') + n.ip;
+    const peers = [...new Set([...A.bgp.neighbors.map(bk), ...B.bgp.neighbors.map(bk)])].sort(natSort);
+    const bgp = peers.map(k => {
+      const x = A.bgp.neighbors.find(n => bk(n) === k), y = B.bgp.neighbors.find(n => bk(n) === k);
+      if (x && y) return { name: k, status: 'both', checks: compareFacts(bgpFacts(A, x), bgpFacts(B, y), nA, nB) };
+      return { name: k, status: x ? 'A' : 'B', checks: [R('Présence', 'Voisin BGP', 'warn', x ? 'déclaré' + (x.peerAs ? ', AS ' + x.peerAs : '') : 'absent', y ? 'déclaré' + (y.peerAs ? ', AS ' + y.peerAs : '') : 'absent', `Ce voisin n’est déclaré que sur ${x ? nA : nB}.`)] };
+    });
+    const iFacts = I => {
+      const f = []; const add = (label, v, x) => f.push(Object.assign({ cat: 'Service', label, v: S(v) }, x || {}));
+      const rt = st => [...st].sort().join(', ') || null;
+      add('Type', typeLabel(I.type)); add('Route-distinguisher', I.rd, { def: 'absent' });
+      add('Route-targets importés', rt(I.rtImport), { def: 'aucun' }); add('Route-targets exportés', rt(I.rtExport), { def: 'aucun' });
+      add('Politique d’import', I.importPol.join(', ') || null, { def: 'aucune' }); add('Politique d’export', I.exportPol.join(', ') || null, { def: 'aucune' });
+      add('Interfaces', I.ifaces.slice().sort(natSort).join(', ') || null, { def: 'aucune' });
+      add('Sites VPLS', I.sites.map(x => `${x.name} (id ${x.id || '?'})`).join(', ') || null, { def: 'aucun' });
+      add('Normalisation VLAN', I.vlanId, { def: 'aucune' });
+      return f;
+    };
+    const inames = [...new Set([...A.instances.keys(), ...B.instances.keys()])].sort(natSort);
+    const instances = inames.map(k => {
+      const x = A.instances.get(k), y = B.instances.get(k);
+      if (x && y) return { name: k, status: 'both', checks: compareFacts(iFacts(x), iFacts(y), nA, nB) };
+      const I = x || y;
+      return { name: k, status: x ? 'A' : 'B', checks: [R('Présence', 'Instance', 'warn', x ? `présente : ${typeLabel(I.type)}` : 'absente', y ? `présente : ${typeLabel(I.type)}` : 'absente', `L’instance n’existe que sur ${x ? nA : nB}.`)] };
+    });
+    const system = compareFacts(devFacts(A), devFacts(B), nA, nB);
+    for (const d of [A, B]) for (const x of d.issues) system.push(R('Syntaxe', 'Lecture de ' + name(d), x.sev, d === A ? x.msg : '—', d === B ? x.msg : '—', x.msg));
+    for (const d of [A, B]) for (const nt of d.notes) system.push(R('Lecture', 'Configuration ' + name(d), nt.sev, d === A ? nt.msg : '', d === B ? nt.msg : '', nt.msg));
+    return { mode: 'diff', A, B, ifaces, bgp, instances, system, lines: diffLines(A, textA, B, textB) };
+  }
+
+  /* Deux configurations qui partagent beaucoup de noms d'interfaces ressemblent plus à
+   * « même équipement » ou « même gabarit » qu'à deux voisins. */
+  function similarity(A, B) {
+    if (A.vendor !== B.vendor) return { common: 0, ratio: 0 };
+    const pick = d => [...d.ifs.values()].filter(i => i.kind !== 'loopback' && !/^(fxp|em|me|lo|M-GigabitEthernet)/.test(i.name)).map(i => i.name);
+    const a = pick(A), b = new Set(pick(B));
+    const common = a.filter(n => b.has(n)).length;
+    return { common, ratio: common / Math.max(1, Math.min(a.length, b.size)) };
+  }
+
+  Object.assign(V, { compareConfigs, similarity, diffLines, maskLine });
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
 <script>
 /* Vis-à-vis : configurations d’exemple (fichier généré par tools/build.js, ne pas modifier à la main) */
 (function (V) {
   V.samples = {
-    "a": "## Last commit: 2026-10-28 09:12:44 CET by netops\nversion 17.4R3;\nsystem {\n    host-name MX104-PAR1;\n}\nchassis {\n    aggregated-devices {\n        ethernet {\n            device-count 4;\n        }\n    }\n}\ninterfaces {\n    ge-1/0/0 {\n        description \"Vers HPE5520-PAR1 XGE1/0/49\";\n        vlan-tagging;\n        mtu 9192;\n        unit 100 {\n            description \"Transit coeur\";\n            vlan-id 100;\n            family inet {\n                address 10.10.0.1/30;\n            }\n            family iso;\n            family mpls;\n        }\n    }\n    ge-1/0/1 {\n        description \"Vers HPE5520-PAR1 GE1/0/1 - clients\";\n        speed 1g;\n        link-mode full-duplex;\n        unit 0 {\n            family bridge {\n                interface-mode access;\n                vlan-id 300;\n            }\n        }\n    }\n    ge-1/0/2 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ge-1/0/3 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ae0 {\n        description \"Bundle vers HPE5520-PAR1 RAGG1\";\n        aggregated-ether-options {\n            lacp {\n                active;\n                periodic fast;\n            }\n        }\n        unit 0 {\n            family inet {\n                address 10.10.1.1/31;\n            }\n        }\n    }\n    lo0 {\n        unit 0 {\n            family inet {\n                address 192.0.2.1/32;\n            }\n            family iso {\n                address 49.0001.1920.0000.2001.00;\n            }\n        }\n    }\n}\nrouting-options {\n    router-id 192.0.2.1;\n    autonomous-system 65001;\n}\nprotocols {\n    ospf {\n        area 0.0.0.0 {\n            interface ge-1/0/0.100 {\n                interface-type p2p;\n                authentication {\n                    md5 1 key \"$9$lrfMx-wYgJZjbsaUDi5TB1RSKW8XNY2o\"; ## SECRET-DATA\n                }\n                bfd-liveness-detection {\n                    minimum-interval 300;\n                    multiplier 3;\n                }\n            }\n            interface ae0.0;\n            interface lo0.0 {\n                passive;\n            }\n        }\n    }\n    isis {\n        level 1 disable;\n        interface ge-1/0/0.100 {\n            point-to-point;\n        }\n        interface lo0.0 {\n            passive;\n        }\n    }\n    mpls {\n        interface ge-1/0/0.100;\n    }\n    ldp {\n        interface ge-1/0/0.100;\n    }\n    bgp {\n        group EBGP-HPE {\n            type external;\n            local-address 192.0.2.1;\n            multihop {\n                ttl 2;\n            }\n            family inet {\n                unicast;\n            }\n            family inet-vpn {\n                unicast;\n            }\n            authentication-key \"$9$.f5zAtOBRSHkn9ApREgoJUk.mfTF69f5\"; ## SECRET-DATA\n            peer-as 65002;\n            neighbor 192.0.2.2 {\n                description HPE5520-PAR1;\n            }\n        }\n    }\n    lldp {\n        interface all;\n    }\n}\n",
-    "b": "#\n version 7.1.070, Release 6635P07\n#\n sysname HPE5520-PAR1\n#\n router id 192.0.2.2\n#\n lldp global enable\n#\nospf 1 router-id 192.0.2.2\n silent-interface LoopBack0\n area 0.0.0.0\n  network 192.0.2.2 0.0.0.0\n area 0.0.0.1\n  network 10.10.1.0 0.0.0.1\n#\nisis 1\n is-level level-2\n network-entity 49.0001.1920.0000.2002.00\n#\nvlan 1\n#\nvlan 100\n name TRANSIT-MX\n#\nvlan 200\n#\nvlan 30\n name CLIENTS\n#\nmpls lsr-id 192.0.2.2\n#\nmpls ldp\n#\ninterface Route-Aggregation1\n description Bundle vers MX104-PAR1 ae0\n ip address 10.10.1.0 255.255.255.254\n link-aggregation mode dynamic\n#\ninterface LoopBack0\n ip address 192.0.2.2 255.255.255.255\n isis enable 1\n#\ninterface Vlan-interface100\n description Transit coeur vers MX104-PAR1\n ip address 10.10.0.2 255.255.255.252\n ospf timer hello 5\n ospf network-type p2p\n ospf authentication-mode md5 1 cipher $c$3$Hk2nY0dpQ8wVw1Rr9yFtR1K5Wq6Xj7==\n ospf 1 area 0.0.0.0\n ospf bfd enable\n isis enable 1\n isis circuit-type p2p\n isis circuit-level level-2\n mpls enable\n#\ninterface GigabitEthernet1/0/1\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/1\n port access vlan 30\n duplex half\n#\ninterface Ten-GigabitEthernet1/0/49\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/0\n port link-type trunk\n port trunk permit vlan 1 100 200\n#\ninterface Ten-GigabitEthernet1/0/51\n port link-mode route\n port link-aggregation group 1\n#\ninterface Ten-GigabitEthernet1/0/52\n port link-mode route\n port link-aggregation group 1\n#\nbgp 65002\n router-id 192.0.2.2\n peer 192.0.2.1 as-number 65010\n peer 192.0.2.1 connect-interface LoopBack0\n peer 192.0.2.1 password cipher $c$3$Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MA==\n peer 10.10.1.1 as-number 65001\n #\n address-family ipv4 unicast\n  peer 192.0.2.1 enable\n  peer 10.10.1.1 enable\n#\nreturn\n"
+    "a": "## Last commit: 2026-10-28 09:12:44 CET by netops\nversion 17.4R3;\nsystem {\n    host-name MX104-PAR1;\n}\nchassis {\n    aggregated-devices {\n        ethernet {\n            device-count 4;\n        }\n    }\n}\ninterfaces {\n    ge-1/0/0 {\n        description \"Vers HPE5520-PAR1 XGE1/0/49\";\n        vlan-tagging;\n        mtu 9192;\n        unit 100 {\n            description \"Transit coeur\";\n            vlan-id 100;\n            family inet {\n                address 198.51.100.1/30;\n            }\n            family iso;\n            family mpls;\n        }\n    }\n    ge-1/0/1 {\n        description \"Vers HPE5520-PAR1 GE1/0/1 - clients\";\n        speed 1g;\n        link-mode full-duplex;\n        unit 0 {\n            family bridge {\n                interface-mode access;\n                vlan-id 300;\n            }\n        }\n    }\n    ge-1/0/2 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ge-1/0/3 {\n        gigether-options {\n            802.3ad ae0;\n        }\n    }\n    ae0 {\n        description \"Bundle vers HPE5520-PAR1 RAGG1\";\n        aggregated-ether-options {\n            lacp {\n                active;\n                periodic fast;\n            }\n        }\n        unit 0 {\n            family inet {\n                address 198.51.100.9/31;\n            }\n        }\n    }\n    lo0 {\n        unit 0 {\n            family inet {\n                address 192.0.2.1/32;\n            }\n            family iso {\n                address 49.0001.1920.0000.2001.00;\n            }\n        }\n    }\n}\nrouting-options {\n    router-id 192.0.2.1;\n    autonomous-system 64501;\n}\nprotocols {\n    ospf {\n        area 0.0.0.0 {\n            interface ge-1/0/0.100 {\n                interface-type p2p;\n                authentication {\n                    md5 1 key \"$9$lrfMx-wYgJZjbsaUDi5TB1RSKW8XNY2o\"; ## SECRET-DATA\n                }\n                bfd-liveness-detection {\n                    minimum-interval 300;\n                    multiplier 3;\n                }\n            }\n            interface ae0.0;\n            interface lo0.0 {\n                passive;\n            }\n        }\n    }\n    isis {\n        level 1 disable;\n        interface ge-1/0/0.100 {\n            point-to-point;\n        }\n        interface lo0.0 {\n            passive;\n        }\n    }\n    mpls {\n        interface ge-1/0/0.100;\n    }\n    ldp {\n        interface ge-1/0/0.100;\n    }\n    bgp {\n        group EBGP-HPE {\n            type external;\n            local-address 192.0.2.1;\n            multihop {\n                ttl 2;\n            }\n            family inet {\n                unicast;\n            }\n            family inet-vpn {\n                unicast;\n            }\n            authentication-key \"$9$.f5zAtOBRSHkn9ApREgoJUk.mfTF69f5\"; ## SECRET-DATA\n            peer-as 64502;\n            neighbor 192.0.2.2 {\n                description HPE5520-PAR1;\n            }\n        }\n    }\n    lldp {\n        interface all;\n    }\n}\n",
+    "b": "#\n version 7.1.070, Release 6635P07\n#\n sysname HPE5520-PAR1\n#\n router id 192.0.2.2\n#\n lldp global enable\n#\nospf 1 router-id 192.0.2.2\n silent-interface LoopBack0\n area 0.0.0.0\n  network 192.0.2.2 0.0.0.0\n area 0.0.0.1\n  network 198.51.100.8 0.0.0.1\n#\nisis 1\n is-level level-2\n network-entity 49.0001.1920.0000.2002.00\n#\nvlan 1\n#\nvlan 100\n name TRANSIT-MX\n#\nvlan 200\n#\nvlan 30\n name CLIENTS\n#\nmpls lsr-id 192.0.2.2\n#\nmpls ldp\n#\ninterface Route-Aggregation1\n description Bundle vers MX104-PAR1 ae0\n ip address 198.51.100.8 255.255.255.254\n link-aggregation mode dynamic\n#\ninterface LoopBack0\n ip address 192.0.2.2 255.255.255.255\n isis enable 1\n#\ninterface Vlan-interface100\n description Transit coeur vers MX104-PAR1\n ip address 198.51.100.2 255.255.255.252\n ospf timer hello 5\n ospf network-type p2p\n ospf authentication-mode md5 1 cipher $c$3$Hk2nY0dpQ8wVw1Rr9yFtR1K5Wq6Xj7==\n ospf 1 area 0.0.0.0\n ospf bfd enable\n isis enable 1\n isis circuit-type p2p\n isis circuit-level level-2\n mpls enable\n#\ninterface GigabitEthernet1/0/1\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/1\n port access vlan 30\n duplex half\n#\ninterface Ten-GigabitEthernet1/0/49\n port link-mode bridge\n description Vers MX104-PAR1 ge-1/0/0\n port link-type trunk\n port trunk permit vlan 1 100 200\n#\ninterface Ten-GigabitEthernet1/0/51\n port link-mode route\n port link-aggregation group 1\n#\ninterface Ten-GigabitEthernet1/0/52\n port link-mode route\n port link-aggregation group 1\n#\nbgp 64502\n router-id 192.0.2.2\n peer 192.0.2.1 as-number 64510\n peer 192.0.2.1 connect-interface LoopBack0\n peer 192.0.2.1 password cipher $c$3$Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MA==\n peer 198.51.100.9 as-number 64501\n #\n address-family ipv4 unicast\n  peer 192.0.2.1 enable\n  peer 198.51.100.9 enable\n#\nreturn\n"
   };
 })(globalThis.VAV = globalThis.VAV || {});
 </script>
@@ -1767,7 +2986,7 @@ td.off{text-decoration:line-through;color:var(--muted)}
   };
   const SEV_TXT = {ok:'conforme', warn:'à vérifier', err:'bloquant', info:'information'};
   const RANK = {err:3, warn:2, info:1, ok:0};
-  const state = { manual: [], filter: 'all', last: null };
+  const state = { manual: [], filter: 'all', last: null, mode: 'pair', copy: null };
 
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2200); }
 
@@ -1787,7 +3006,9 @@ td.off{text-decoration:line-through;color:var(--muted)}
     if(!d){ el.classList.add('bad'); el.textContent='Format non reconnu : choisissez le constructeur dans la liste.'; return; }
     const s=VAV.summary(d);
     const v=VAV.adapter(d).formatLabel(d);
-    el.innerHTML=`<strong>${esc(d.hostname||'Nom d’hôte introuvable')}</strong>, ${esc(v)} : ${s.physC} port(s), ${s.l3} interface(s) IP${s.protos.length?', '+esc(s.protos.join(', ')):''}.`;
+    const ne=d.issues.filter(x=>x.sev==='err').length, nw=d.issues.filter(x=>x.sev==='warn').length;
+    el.innerHTML=`<strong>${esc(d.hostname||'Nom d’hôte introuvable')}</strong>, ${esc(v)} : ${s.physC} port(s), ${s.l3} interface(s) IP${s.protos.length?', '+esc(s.protos.join(', ')):''}.`
+      + (ne||nw ? `<span class="syntax">${ne?`${ne} erreur${ne>1?'s':''} de syntaxe`:''}${ne&&nw?', ':''}${nw?`${nw} avertissement${nw>1?'s':''}`:''} : ${esc(d.issues[0].msg)}${d.issues.length>1?' (détail dans le rapport)':''}</span>` : '');
   }
   let deb={};
   for(const s of ['A','B']){
@@ -1803,6 +3024,15 @@ td.off{text-decoration:line-through;color:var(--muted)}
   $('clear').onclick=()=>{ for(const s of ['A','B']){ $('cfg'+s).value=''; $('ven'+s).value='auto'; describe(s);} state.manual=[]; $('report').hidden=true; $('report').innerHTML=''; };
   $('swap').onclick=()=>{ const a=$('cfgA').value, va=$('venA').value; $('cfgA').value=$('cfgB').value; $('venA').value=$('venB').value; $('cfgB').value=a; $('venB').value=va; state.manual=state.manual.map(p=>[p[1],p[0]]); describe('A'); describe('B'); if(!$('report').hidden) run(); };
   $('run').onclick=()=>run(true);
+  const TITLES={ pair:['Premier équipement','Équipement voisin'], diff:['Configuration de référence','Configuration à comparer'] };
+  function setMode(m, rerun){
+    state.mode=m;
+    document.querySelectorAll('.modes [data-mode]').forEach(b=>b.setAttribute('aria-checked', b.dataset.mode===m));
+    $('titleA').textContent=TITLES[m][0]; $('titleB').textContent=TITLES[m][1];
+    state.filter = m==='diff' ? 'issues' : 'all';
+    if(rerun && !$('report').hidden) run(false);
+  }
+  document.querySelectorAll('.modes [data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode,true));
   document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); run(true); } });
 
   function worst(checks){ return checks.reduce((w,c)=>RANK[c.sev]>RANK[w]?c.sev:w,'ok'); }
@@ -1822,21 +3052,22 @@ td.off{text-decoration:line-through;color:var(--muted)}
     return html;
   }
   const HOW = { auto:'Lien trouvé automatiquement : adresses dans le même sous-réseau.', description:'Lien déduit des descriptions d’interfaces (chaque côté cite l’autre).', 'manuel':'Paire ajoutée à la main.' };
+  const howText = l => l.how==='probable' ? `Lien probable (${(l.why||[]).join(', ')}) : ces interfaces semblent se faire face, mais leur adressage ne correspond pas.` : (HOW[l.how]||'');
 
   function run(scroll){
     const A=$('cfgA').value, B=$('cfgB').value;
     if(!A.trim()||!B.trim()){ toast('Collez une configuration de chaque côté.'); (A.trim()?$('cfgB'):$('cfgA')).focus(); return; }
     let r;
-    try{ r=VAV.analyze(A,B,$('venA').value,$('venB').value,state.manual); }
+    try{ r= state.mode==='diff' ? VAV.compareConfigs(A,B,$('venA').value,$('venB').value) : VAV.analyze(A,B,$('venA').value,$('venB').value,state.manual); }
     catch(e){ console.error(e); toast('Erreur de lecture : '+e.message); return; }
     if(r.error){ toast(r.error==='both'?'Aucun des deux formats n’est reconnu.':'Format du côté '+r.error+' non reconnu : choisissez le constructeur.'); return; }
-    state.last=r; render(r);
+    state.last=r; if(state.mode==='diff') renderCompare(r); else render(r);
     if(scroll) $('report').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'start'});
   }
 
   function render(r){
     const nA=r.A.hostname||'Côté A', nB=r.B.hostname||'Côté B';
-    const all=[...r.links.flatMap(l=>l.checks), ...r.sessions.flatMap(s=>s.checks), ...r.global];
+    const all=[...r.links.flatMap(l=>l.checks), ...r.sessions.flatMap(s=>s.checks), ...(r.services||[]).flatMap(s=>s.checks), ...r.global, ...(r.common||[])];
     const c=counts(all);
     const title = c.err ? `${c.err} problème${c.err>1?'s':''} bloquant${c.err>1?'s':''}${c.warn?`, ${c.warn} point${c.warn>1?'s':''} à vérifier`:''}`
       : c.warn ? `Rien de bloquant, ${c.warn} point${c.warn>1?'s':''} à vérifier` : 'Les deux configurations concordent';
@@ -1851,7 +3082,7 @@ td.off{text-decoration:line-through;color:var(--muted)}
     };
     const linkTitle=(a,b)=>`<h3><span class="ea">${esc(a)}</span><span class="wire"></span><span class="eb">${esc(b)}</span></h3>`;
     if(r.links.length){
-      r.links.forEach((l,i)=>addBlock(i===0?'<h3>Liens</h3>':'', linkTitle(l.a.name,l.b.name), `${l.a.name} ↔ ${l.b.name}`, HOW[l.how]||'', l.checks, true));
+      r.links.forEach((l,i)=>addBlock(i===0?'<h3>Liens</h3>':'', linkTitle(l.a.name,l.b.name), `${l.a.name} ↔ ${l.b.name}`, howText(l), l.checks, true));
     } else {
       idx+='<h3>Liens</h3><p style="margin:0;color:var(--muted);font-size:.88rem">Aucun lien trouvé.</p>';
     }
@@ -1861,7 +3092,21 @@ td.off{text-decoration:line-through;color:var(--muted)}
         addBlock(i===0?'<h3>Sessions BGP</h3>':'', `<h3><span class="ea">neighbor ${esc(a)}</span><span class="wire"></span><span class="eb">peer ${esc(b)}</span></h3>`, `BGP ${s.a?s.a.ip:'?'} / ${s.b?s.b.ip:'?'}`, s.a&&s.a.group?'Groupe Junos : '+s.a.group:'', s.checks);
       });
     }
+    (r.services||[]).forEach((x,i)=>addBlock(i===0?'<h3>Services</h3>':'', `<h3><span class="ea">${esc(x.a.name)}</span><span class="wire"></span><span class="eb">${esc(x.b.name)}</span></h3>`, `Service ${x.a.name} / ${x.b.name}`, 'Instances qui échangent des route-targets (même service de part et d’autre).', x.checks));
     addBlock('<h3>Équipements</h3>', `<p class="title">Contrôles globaux</p>`, 'Identifiants et doublons', '', r.global);
+    if((r.common||[]).length) addBlock('', `<p class="title">Paramètres communs du réseau</p>`, 'Serveurs et objets communs', 'Serveurs d’administration et objets de même nom (prefix-lists, filtres, politiques, QoS…) : ils doivent être identiques sur deux équipements d’un même réseau.', r.common);
+    const loc=r.localServices||[];
+    if(loc.length){
+      idx+=`<a href="#svc-local"><span class="dot info"></span><span class="t">Services propres à chaque équipement</span><span class="n">${loc.length}</span></a>`;
+      const ls=side=>{ const l=loc.filter(x=>x.side===side); return l.length?`<ul class="unm">${l.map(x=>`<li><code>${esc(x.name)}</code> <span>${esc(x.type)}</span><em>RT ${esc(x.rt)} ; interfaces : ${esc(x.ifaces)}</em></li>`).join('')}</ul>`:'<p class="empty" style="padding:0">Aucun.</p>'; };
+      blocks+=`<section class="block" id="svc-local"><header class="bhead"><p class="title">Services propres à chaque équipement</p></header><p class="intro">Instances (VRF, VPLS…) qui ne partagent aucun route-target avec l’autre équipement : elles ne sont pas comparées entre elles, c’est normal pour des services locaux.</p><div class="cover"><div><h4>${esc(nA)}</h4>${ls('A')}</div><div><h4>${esc(nB)}</h4>${ls('B')}</div></div></section>`;
+    }
+    const unm=r.unmatched||{A:[],B:[]}; const nUnm=unm.A.length+unm.B.length;
+    const unmList=(list,dn)=>list.length?`<ul class="unm">${list.map(u=>`<li class="${u.toPeer?'peer':''}"><code>${esc(u.name)}</code> <span>${esc(u.detail)}</span>${u.desc?`<em>${esc(u.desc)}</em>`:''}${u.toPeer?`<b>décrite vers le voisin</b>`:''}</li>`).join('')}</ul>`:`<p class="empty" style="padding:0">Toutes les interfaces de ${esc(dn)} concernées ont été comparées.</p>`;
+    idx+=`<a href="#cover"><span class="dot ${unm.A.concat(unm.B).some(u=>u.toPeer)?'warn':(nUnm?'info':'ok')}"></span><span class="t">Interfaces non comparées</span><span class="n">${nUnm||'aucune'}</span></a>`;
+    blocks+=`<section class="block" id="cover"><header class="bhead"><p class="title">Interfaces non comparées</p></header>
+      <p class="intro">Interfaces IP (hors loopbacks) et ports décrits vers le voisin qui n’ont été rapprochés d’aucune interface en face. C’est normal pour celles qui vont vers d’autres équipements ; pour les autres, vérifiez l’adressage ou ajoutez la paire à la main.</p>
+      <div class="cover"><div><h4>${esc(nA)}</h4>${unmList(unm.A,nA)}</div><div><h4>${esc(nB)}</h4>${unmList(unm.B,nB)}</div></div></section>`;
 
     const noLinkMsg = r.links.length ? '' : `<section class="block"><p class="empty" style="color:var(--ink)">Aucun lien n’a été trouvé automatiquement : aucune adresse IP des deux équipements ne partage un sous-réseau, et aucune description ne cite l’autre équipement. Pour un lien de niveau 2 ou une interface sans IP, désignez la paire ci-dessous.</p></section>`;
     const optsA=VAV.pairable(r.A).map(x=>`<option>${esc(x)}</option>`).join(''), optsB=VAV.pairable(r.B).map(x=>`<option>${esc(x)}</option>`).join('');
@@ -1872,10 +3117,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
     </section>`;
     const raw=`<section class="block"><details class="raw"><summary>Ce que l’outil a compris de chaque configuration</summary>${rawTable(r.A)}${rawTable(r.B)}</details></section>`;
 
+    const sim=VAV.similarity(r.A,r.B);
+    const hint = sim.common>=3 && sim.ratio>=0.5 ? `<div class="hint"><p><b>Ces deux configurations ont ${sim.common} interfaces de même nom.</b> S’il s’agit du même équipement avant et après une modification, ou de deux équipements censés être identiques, la comparaison complète passera en revue toutes les interfaces et toutes les lignes.</p><button class="btn primary" type="button" id="toDiff">Comparer les deux configurations</button></div>` : '';
+    state.copy={ title:`${nA} (A) / ${nB} (B), vérification des liens entre voisins`, sections:[...r.links.map(l=>({t:`Lien ${l.a.name} <-> ${l.b.name}`, checks:l.checks})), ...r.sessions.map(s=>({t:`Session BGP ${s.a?s.a.ip:'-'} / ${s.b?s.b.ip:'-'}`, checks:s.checks})), ...(r.services||[]).map(x=>({t:`Service ${x.a.name} / ${x.b.name}`, checks:x.checks})), {t:'Contrôles globaux', checks:r.global}, {t:'Paramètres communs du réseau', checks:r.common||[]}], extra:'' };
     $('report').innerHTML=`
       <div class="verdict">
         <div><h2>${esc(title)}</h2>
-          <p class="tally"><span><span class="dot err"></span><b>${c.err}</b> bloquant${c.err>1?'s':''}</span><span><span class="dot warn"></span><b>${c.warn}</b> à vérifier</span><span><span class="dot"></span><b>${c.ok}</b> conforme${c.ok>1?'s':''}</span><span><span class="dot info"></span><b>${c.info}</b> information${c.info>1?'s':''}</span><span>${r.links.length} lien${r.links.length>1?'s':''}, ${r.sessions.length} session${r.sessions.length>1?'s':''} BGP</span></p>
+          <p class="tally"><span><span class="dot err"></span><b>${c.err}</b> bloquant${c.err>1?'s':''}</span><span><span class="dot warn"></span><b>${c.warn}</b> à vérifier</span><span><span class="dot"></span><b>${c.ok}</b> conforme${c.ok>1?'s':''}</span><span><span class="dot info"></span><b>${c.info}</b> information${c.info>1?'s':''}</span><span>${r.links.length} lien${r.links.length>1?'s':''}, ${r.sessions.length} session${r.sessions.length>1?'s':''} BGP${(r.unmatched.A.length+r.unmatched.B.length)?`, ${r.unmatched.A.length+r.unmatched.B.length} interface(s) non comparée(s)`:''}</span></p>
         </div>
         <div class="tools">
           <div class="seg" role="group" aria-label="Filtrer les contrôles">
@@ -1886,14 +3134,78 @@ td.off{text-decoration:line-through;color:var(--muted)}
           <button class="btn" id="copy" type="button">Copier le rapport</button>
         </div>
       </div>
+      ${hint}
       <div class="layout"><nav class="index" aria-label="Sommaire du rapport">${idx}<h3>Outils</h3><a href="#manual"><span class="t" style="font-family:var(--font);font-size:.9rem">Comparer une autre paire</span></a></nav>
       <div id="blocks">${noLinkMsg}${blocks}${manual}${raw}</div></div>`;
     $('report').hidden=false;
     applyFilter();
     $('report').querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.filter=b.dataset.f; $('report').querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b)); applyFilter(); });
-    $('copy').onclick=()=>copyReport(r);
+    $('copy').onclick=()=>copyReport();
+    if($('toDiff')) $('toDiff').onclick=()=>{ setMode('diff',false); run(true); };
     $('mAdd').onclick=()=>{ const p=[$('mA').value,$('mB').value]; if(!state.manual.some(x=>x[0]===p[0]&&x[1]===p[1])) state.manual.push(p); run(false); setTimeout(()=>{ const blocksEls=[...document.querySelectorAll('#blocks .block')]; const t=blocksEls.find(b=>b.querySelector('.ea')&&b.querySelector('.ea').textContent===p[0]&&b.querySelector('.eb').textContent===p[1]); if(t) t.scrollIntoView({block:'start'}); else { const any=blocksEls.find(b=>b.querySelector('.ea')&&b.querySelector('.ea').textContent.startsWith(p[0])&&b.querySelector('.eb').textContent.startsWith(p[1])); if(any) any.scrollIntoView({block:'start'}); toast(any?'Paire comparée.':'Cette paire est déjà analysée plus haut.'); } },0); };
     $('report').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ state.manual.splice(+b.dataset.del,1); run(false); });
+  }
+
+  function renderCompare(r){
+    const nA=r.A.hostname||'Configuration A', nB=r.B.hostname||'Configuration B';
+    const devHead=`<div class="devnames"><span>${esc(nA)}</span><span></span><span>${esc(nB)}</span></div>`;
+    const isBad=c=>c.sev==='warn'||c.sev==='err';
+    const bad=x=>x.checks.some(isBad);
+    const ifDiff=r.ifaces.filter(bad), ifSame=r.ifaces.filter(x=>!bad(x));
+    const bgpDiff=r.bgp.filter(bad), bgpSame=r.bgp.filter(x=>!bad(x));
+    const nRows=[...r.ifaces,...r.bgp,...(r.instances||[])].flatMap(x=>x.checks).filter(isBad).length + r.system.filter(isBad).length;
+    const Ln=r.lines, nLines=Ln.available?Ln.nAdded+Ln.nRemoved:0;
+    const pl=(n,w)=>n+' '+w+(n>1?'s':'');
+    const title = nRows||nLines ? [nRows?pl(nRows,'écart')+' de paramètres':'', Ln.available&&nLines?pl(nLines,'ligne')+' différente'+(nLines>1?'s':''):''].filter(Boolean).join(', ') : 'Les deux configurations sont identiques';
+    const navItem=(id,label,checks)=>{ const k=checks.filter(isBad).length; return `<a href="#${id}"><span class="dot ${worst(checks)}"></span><span class="t">${esc(label)}</span><span class="n">${k?pl(k,'écart'):'OK'}</span></a>`; };
+    const block=(id,titleHtml,meta,checks)=>`<section class="block" id="${id}"><header class="bhead ${worst(checks)}">${titleHtml}${meta?`<p class="bmeta">${esc(meta)}</p>`:''}</header>${devHead}${rowsByCat(checks)}<p class="empty" hidden>Rien à signaler avec ce filtre.</p></section>`;
+    const listBlock=(id,t,items)=>`<section class="block" id="${id}"><header class="bhead"><p class="title">${esc(t)}</p></header><p class="intro names">${items.map(x=>`<code>${esc(x.name)}</code>`).join(' ')}</p></section>`;
+    const only=x=>x.status==='A'?`Uniquement dans ${nA}`:x.status==='B'?`Uniquement dans ${nB}`:'';
+    let idx='<h3>Équipements</h3>'+navItem('c-sys','Système et routage',r.system), blocks=block('c-sys','<p class="title">Système et routage</p>','',r.system);
+    idx+='<h3>Interfaces</h3>';
+    ifDiff.forEach((x,i)=>{ const id='c-if'+i; if(i<40) idx+=navItem(id,x.name,x.checks); blocks+=block(id,`<p class="title mono">${esc(x.name)}</p>`,only(x),x.checks); });
+    if(ifDiff.length>40) idx+=`<p class="more">et ${ifDiff.length-40} autres</p>`;
+    if(ifSame.length){ idx+=`<a href="#c-ifsame"><span class="dot"></span><span class="t">Identiques</span><span class="n">${ifSame.length}</span></a>`; blocks+=listBlock('c-ifsame',`Interfaces identiques (${ifSame.length})`,ifSame); }
+    if(r.bgp.length){
+      idx+='<h3>Voisins BGP</h3>';
+      bgpDiff.forEach((x,i)=>{ const id='c-bgp'+i; if(i<30) idx+=navItem(id,x.name,x.checks); blocks+=block(id,`<p class="title mono">Voisin ${esc(x.name)}</p>`,only(x),x.checks); });
+      if(bgpSame.length){ idx+=`<a href="#c-bgpsame"><span class="dot"></span><span class="t">Identiques</span><span class="n">${bgpSame.length}</span></a>`; blocks+=listBlock('c-bgpsame',`Voisins BGP identiques (${bgpSame.length})`,bgpSame); }
+    }
+    if((r.instances||[]).length){
+      const iDiff=r.instances.filter(bad), iSame=r.instances.filter(x=>!bad(x));
+      idx+='<h3>Services</h3>';
+      iDiff.forEach((x,i)=>{ const id='c-svc'+i; idx+=navItem(id,x.name,x.checks); blocks+=block(id,`<p class="title mono">${esc(x.name)}</p>`,only(x),x.checks); });
+      if(iSame.length){ idx+=`<a href="#c-svcsame"><span class="dot"></span><span class="t">Identiques</span><span class="n">${iSame.length}</span></a>`; blocks+=listBlock('c-svcsame',`Services identiques (${iSame.length})`,iSame); }
+    }
+    idx+=`<h3>Texte</h3><a href="#c-lines"><span class="dot ${Ln.available?(nLines?'warn':'ok'):'info'}"></span><span class="t">Lignes différentes</span><span class="n">${Ln.available?nLines:'—'}</span></a>`;
+    let extra='';
+    if(Ln.available){
+      const MAX=3000; let shown=0;
+      const body=Ln.groups.length?Ln.groups.map(g=>{ if(shown>=MAX) return ''; const rows=[...g.removed.map(t=>['del','−',t]),...g.added.map(t=>['add','+',t])].slice(0,MAX-shown); shown+=rows.length; return `<div class="dsec"><h4>${esc(g.section)}</h4>${rows.map(([k,sg,t])=>`<div class="dl ${k}"><span aria-hidden="true">${sg}</span><code>${esc(t)}</code><span class="sr">${k==='del'?'uniquement dans A':'uniquement dans B'}</span></div>`).join('')}</div>`; }).join('')+(nLines>MAX?`<p class="empty">Affichage limité aux ${MAX} premières lignes.</p>`:''):'<p class="empty">Aucune ligne différente : les deux textes de configuration sont équivalents.</p>';
+      blocks+=`<section class="block" id="c-lines"><header class="bhead"><p class="title">Différences ligne à ligne</p><p class="bmeta">− : uniquement dans ${esc(nA)} (${Ln.nRemoved}) ; + : uniquement dans ${esc(nB)} (${Ln.nAdded}). Toutes les lignes sont comparées, y compris celles que l’outil n’analyse pas en détail. Les clés sont masquées.</p></header><div class="diff">${body}</div></section>`;
+      extra='== Lignes différentes (− uniquement dans A, + uniquement dans B)\n'+Ln.groups.map(g=>['['+g.section+']',...g.removed.map(t=>'- '+t),...g.added.map(t=>'+ '+t)].join('\n')).join('\n');
+    } else blocks+=`<section class="block" id="c-lines"><header class="bhead"><p class="title">Différences ligne à ligne</p></header><p class="empty">${esc(Ln.reason)}</p></section>`;
+    const raw=`<section class="block"><details class="raw"><summary>Ce que l’outil a compris de chaque configuration</summary>${rawTable(r.A)}${rawTable(r.B)}</details></section>`;
+    state.copy={ title:`comparaison de ${nA} (A) et ${nB} (B)`, sections:[{t:'Système et routage',checks:r.system}, ...ifDiff.map(x=>({t:'Interface '+x.name,checks:x.checks})), ...bgpDiff.map(x=>({t:'Voisin BGP '+x.name,checks:x.checks})), ...(r.instances||[]).filter(bad).map(x=>({t:'Service '+x.name,checks:x.checks}))], extra };
+    if(state.filter==='err') state.filter='issues';
+    $('report').innerHTML=`
+      <div class="verdict">
+        <div><h2>${esc(title)}</h2>
+          <p class="tally"><span><span class="dot warn"></span><b>${ifDiff.length}</b> interface${ifDiff.length>1?'s':''} différente${ifDiff.length>1?'s':''}</span><span><span class="dot"></span><b>${ifSame.length}</b> identique${ifSame.length>1?'s':''}</span>${r.bgp.length?`<span><span class="dot ${bgpDiff.length?'warn':''}"></span><b>${bgpDiff.length}</b> voisin${bgpDiff.length>1?'s':''} BGP différent${bgpDiff.length>1?'s':''} sur ${r.bgp.length}</span>`:''}${Ln.available?`<span><b>−${Ln.nRemoved} / +${Ln.nAdded}</b> lignes</span>`:''}</p>
+        </div>
+        <div class="tools">
+          <div class="seg" role="group" aria-label="Filtrer les paramètres">
+            <button type="button" data-f="all" aria-pressed="${state.filter==='all'}">Tout</button>
+            <button type="button" data-f="issues" aria-pressed="${state.filter!=='all'}">Écarts seulement</button>
+          </div>
+          <button class="btn" id="copy" type="button">Copier le rapport</button>
+        </div>
+      </div>
+      <div class="layout"><nav class="index" aria-label="Sommaire du rapport">${idx}</nav><div id="blocks">${blocks}${raw}</div></div>`;
+    $('report').hidden=false;
+    applyFilter();
+    $('report').querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.filter=b.dataset.f; $('report').querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b)); applyFilter(); });
+    $('copy').onclick=()=>copyReport();
   }
 
   function applyFilter(){
@@ -1922,15 +3234,13 @@ td.off{text-decoration:line-through;color:var(--muted)}
     ${nb?`<table style="margin-top:14px"><thead><tr><th>Voisin BGP</th><th>AS distant</th><th>Groupe</th><th>Source</th><th>Familles</th><th>Multihop</th><th>Auth</th><th>VRF</th></tr></thead><tbody>${nb}</tbody></table>`:''}</div>`;
   }
 
-  function copyReport(r){
-    const nA=r.A.hostname||'A', nB=r.B.hostname||'B';
-    const tag={ok:'[OK]  ',warn:'[A VOIR]',err:'[ERREUR]',info:'[INFO]'};
+  function copyReport(){
+    const m=state.copy; if(!m) return;
+    const tag={ok:'[OK]    ',warn:'[A VOIR]',err:'[ERREUR]',info:'[INFO]  '};
     const keep=c=> state.filter==='all' || c.sev==='err' || (state.filter==='issues'&&c.sev==='warn');
-    const L=[`Rapport Vis-à-vis : ${nA} (A) / ${nB} (B)`, `Généré le ${new Date().toLocaleString('fr-FR')}`, ''];
-    const sec=(t,checks)=>{ const cs=checks.filter(keep); if(!cs.length) return; L.push('== '+t); cs.forEach(c=>{ L.push(`${tag[c.sev]} ${c.cat} / ${c.label}`); L.push(`    A : ${c.a}`); L.push(`    B : ${c.b}`); if(c.msg) L.push(`    ${c.msg}`); }); L.push(''); };
-    r.links.forEach(l=>sec(`Lien ${l.a.name} <-> ${l.b.name}`, l.checks));
-    r.sessions.forEach(s=>sec(`Session BGP ${s.a?s.a.ip:'-'} / ${s.b?s.b.ip:'-'}`, s.checks));
-    sec('Contrôles globaux', r.global);
+    const L=[`Rapport Vis-à-vis : ${m.title}`, `Généré le ${new Date().toLocaleString('fr-FR')}`, ''];
+    for(const sct of m.sections){ const cs=sct.checks.filter(keep); if(!cs.length) continue; L.push('== '+sct.t); cs.forEach(c=>{ L.push(`${tag[c.sev]} ${c.cat} / ${c.label}`); L.push(`    A : ${c.a}`); L.push(`    B : ${c.b}`); if(c.msg) L.push(`    ${c.msg}`); }); L.push(''); }
+    if(m.extra) L.push(m.extra);
     const text=L.join('\n');
     const fallback=()=>{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(e){} ta.remove(); toast(ok?'Rapport copié.':'Copie impossible ici : sélectionnez le texte à la main.'); };
     if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>toast('Rapport copié.'), fallback); else fallback();
