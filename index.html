@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vis-à-vis : comparateur de configurations de routeurs voisins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="3" y="20" width="18" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+      <rect x="43" y="20" width="18" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="3"/>
+      <path d="M21 32h22" stroke="currentColor" stroke-width="3"/>
+      <circle cx="32" cy="32" r="5" fill="currentColor"/>
+      <path d="M8 27h8M8 32h8M8 37h8M48 27h8M48 32h8M48 37h8" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <div>
+      <h1>Vis-à-vis</h1>
+      <p class="lede">Collez deux configurations Junos ou HPE Comware. Vis-à-vis vérifie que deux voisins sont cohérents de chaque côté de leurs liens, ou compare deux configurations interface par interface, paramètre par paramètre et ligne par ligne.</p>
+    </div>
+    <p class="privacy"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m5.3 8 1.9 1.9 3.6-3.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Analyse faite dans votre navigateur : aucune configuration n’est envoyée nulle part.</p>
+  </header>
+
+  <div class="modes" role="radiogroup" aria-label="Type d’analyse">
+    <button type="button" role="radio" aria-checked="true" data-mode="pair"><b>Deux voisins</b><span>Deux équipements reliés entre eux : vérifie que chaque lien est cohérent des deux côtés (adressage, VLAN, OSPF, BGP…).</span></button>
+    <button type="button" role="radio" aria-checked="false" data-mode="diff"><b>Comparer deux configurations</b><span>Même équipement avant et après une modification, ou deux équipements censés être configurés pareil : toutes les interfaces, tous les paramètres, toutes les lignes.</span></button>
+  </div>
+
+  <section class="bench" aria-label="Configurations à comparer">
+    <article class="pane" id="paneA">
+      <div class="pane-head">
+        <h2><span class="side-tag">A</span><span id="titleA">Premier équipement</span></h2>
+        <select id="venA" aria-label="Constructeur du côté A"><option value="auto">Détection automatique</option></select>
+        <label class="filebtn">Ouvrir un fichier<input type="file" id="fileA" accept=".txt,.conf,.cfg,.log,text/plain"></label>
+      </div>
+      <textarea id="cfgA" spellcheck="false" autocomplete="off" aria-label="Configuration du côté A"></textarea>
+      <p class="detect" id="detA">Collez une configuration ou ouvrez un fichier.</p>
+    </article>
+
+    <div class="patch">
+      <button class="go" id="run" title="Ctrl + Entrée">Comparer<small>Ctrl + Entrée</small></button>
+      <button class="ghost" id="swap" type="button">Inverser A et B</button>
+      <button class="ghost" id="demo" type="button">Charger l’exemple</button>
+      <button class="ghost" id="clear" type="button">Tout effacer</button>
+    </div>
+
+    <article class="pane" id="paneB">
+      <div class="pane-head">
+        <h2><span class="side-tag">B</span><span id="titleB">Équipement voisin</span></h2>
+        <select id="venB" aria-label="Constructeur du côté B"><option value="auto">Détection automatique</option></select>
+        <label class="filebtn">Ouvrir un fichier<input type="file" id="fileB" accept=".txt,.conf,.cfg,.log,text/plain"></label>
+      </div>
+      <textarea id="cfgB" spellcheck="false" autocomplete="off" aria-label="Configuration du côté B"></textarea>
+      <p class="detect" id="detB">Collez une configuration ou ouvrez un fichier.</p>
+    </article>
+  </section>
+
+  <section id="report" hidden aria-live="polite"></section>
+
+  <footer class="foot">
+    <p>Formats acceptés : Junos en hiérarchique ou en <code>display set</code> (lignes désactivées ignorées, routing-instances prises en compte) et Comware 7 (<code>display current-configuration</code>, noms d’interfaces complets ou abrégés).</p>
+    <p>Code source, ajout de constructeurs et hébergement : voir le README du dépôt.</p>
+    <p>Les clés Junos <code>$9$</code> sont décodées localement uniquement pour être comparées et ne sont jamais affichées. Les clés HPE <code>$c$</code> ne sont pas réversibles et restent à vérifier à la main.</p>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/core/ip.js"></script>
+<script src="js/core/text.js"></script>
+<script src="js/core/secrets.js"></script>
+<script src="js/core/model.js"></script>
+<script src="js/vendors/junos.js"></script>
+<script src="js/vendors/comware.js"></script>
+<script src="js/analysis/views.js"></script>
+<script src="js/analysis/checks-link.js"></script>
+<script src="js/analysis/checks-bgp.js"></script>
+<script src="js/analysis/checks-services.js"></script>
+<script src="js/analysis/checks-common.js"></script>
+<script src="js/analysis/checks-global.js"></script>
+<script src="js/analysis/analyze.js"></script>
+<script src="js/analysis/compare.js"></script>
+<script src="js/ui/samples.js"></script>
+<script src="js/ui/app.js"></script>
+</body>
+</html>
